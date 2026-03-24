@@ -115,6 +115,21 @@ export const addNotionTask = async (title) => {
   }
 };
 
+// 6. Видалення задачі (архівування в Notion)
+export const deleteNotionTask = async (taskId) => {
+  try {
+    const response = await fetch(`/api/notion?endpoint=/v1/pages/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archived: true })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Помилка видалення:", error);
+    throw error;
+  }
+};
+
 /**
  * 3. Підрахунок сумарного часу
  */

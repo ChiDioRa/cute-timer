@@ -3,7 +3,8 @@ import {
   fetchNotionTasks, 
   fetchTaskSteps, 
   fetchTaskTotalTime, 
-  markTaskAsDone, 
+  markTaskAsDone,
+  deleteNotionTask, 
   addNotionTask // <--- ДОДАЙ ЦЕ СЮДИ
 } from '../services/notionService';
 
@@ -212,6 +213,33 @@ export function useTimerLogic() {
     }
   };
 
+  // ✨ ФУНКЦІЯ ВИДАЛЕННЯ ✨
+  const handleDeleteTask = async (taskId) => {
+    // Шукаємо назву задачі для повідомлення
+    const taskToDelete = tasks.find(t => t.id === taskId);
+    const taskName = taskToDelete ? taskToDelete.text : "цю задачу";
+
+    if (!window.confirm(`Видалити "${taskName}"? 🌸`)) return;
+
+    try {
+      // 1. Видаляємо візуально миттєво
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      
+      // 2. Якщо це була активна задача — скидаємо таймер
+      if (activeTaskId === taskId) {
+        resetToMain();
+      }
+
+      // 3. Відправляємо в Notion
+      await deleteNotionTask(taskId);
+      console.log("🗑️ Задача видалена з Notion");
+    } catch (error) {
+      console.error("Не вдалося видалити:", error);
+      // Якщо помилка — повертаємо список (синхронізуємо)
+      await syncWithNotion();
+    }
+  };
+
   const handleAddTask = async (e) => {
   if (e) e.preventDefault();
   if (!newTaskText.trim()) return;
@@ -255,7 +283,7 @@ const handleGenerateSteps = async () => {
 return {
     seconds, isRunning, setIsRunning, setSeconds,
     activeTaskId, tasks, activeSteps, currentStepIndex,
-    isSyncing, taskTimes,
+    isSyncing, taskTimes, handleDeleteTask,
     halfwayAudioRef, warningAudioRef, finishAudioRef,
     syncWithNotion, handleTaskClick, handleNextStep, newTaskText, setNewTaskText, handleAddTask, 
   addNotionTask, // також додай імпорт функції з сервісу

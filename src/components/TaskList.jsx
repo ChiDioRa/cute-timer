@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Clock, Plus, Wand2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Plus, Wand2, Trash2 } from 'lucide-react';
 
 function TaskList({ 
   tasks, 
@@ -12,6 +12,7 @@ function TaskList({
   onGenerateSteps,
   isGenerating,
   onSync,
+  onDeleteTask,
   taskTimes = {} 
 }) {
   return (
@@ -68,6 +69,8 @@ function TaskList({
                 )}
               </button>
 
+              
+              
               <div className="flex flex-col">
               <span className={`text-sm lg:text-base transition-all duration-500 leading-tight ${
   task.completed ? 'font-medium text-pink-300 line-through decoration-pink-200 decoration-1' : 'font-bold text-pink-800'
@@ -83,6 +86,7 @@ function TaskList({
                     </span>
                   </div>
                 )}
+                
               </div>
             </div>
             
@@ -93,6 +97,17 @@ function TaskList({
                 <span className="text-[9px] font-black text-pink-500 uppercase tracking-widest">Зараз</span>
               </div>
             )}
+            {/* ✨ КНОПКА ВИДАЛЕННЯ ✨ */}
+            <button 
+              onClick={(e) => {
+                e.stopPropagation(); // Щоб не відкрився таймер при кліку на смітник
+                onDeleteTask(task.id);
+              }}
+              className="opacity-0 group-hover:opacity-100 ml-2 p-2 text-pink-100 hover:text-rose-400 hover:bg-rose-50 rounded-full transition-all duration-300"
+              title="Видалити задачу"
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
         ))}
         {/* КНОПКА ГЕНЕРАЦІЇ КРОКІВ */}

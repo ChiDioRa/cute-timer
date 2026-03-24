@@ -117,6 +117,8 @@ function App() {
               setNewTaskText={logic.setNewTaskText}
               onGenerateSteps={logic.handleGenerateSteps}
   isGenerating={logic.isGenerating}
+  // ✨ ПЕРЕДАЄМО ВИДАЛЕННЯ ✨
+  onDeleteTask={logic.handleDeleteTask}
             />
         </div>
       </div>
