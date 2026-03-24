@@ -69,7 +69,8 @@ export const fetchTaskSteps = async (pageId) => {
             let cleanText = part
               .replace(timeRegex, '')
               .replace(/\*/g, '')
-              .replace(/^[\d+\.\s|Крок\s*\d+:\s|-]*/i, '')
+              // Правильний вираз: шукає слово "Крок" з цифрами, або просто маркери списку
+              .replace(/^(?:Крок\s*\d+[:.]?\s*)?[\d.)\s*-]+/i, '')
               .trim();
 
             if (cleanText.length > 2) {

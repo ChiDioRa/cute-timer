@@ -257,26 +257,31 @@ export function useTimerLogic() {
 };
 
 const handleGenerateSteps = async () => {
-  setIsGenerating(true);
-  try {
-    // Заміни URL на свій реальний вебхук з Make/Zapier
-    const webhookUrl = import.meta.env.VITE_GENERATE_STEPS_WEBHOOK; 
+  const webhookUrl = import.meta.env.VITE_GENERATE_STEPS_WEBHOOK;
+  if (!webhookUrl) return;
 
+  setIsGenerating(true); // Кнопка одразу стає "Магія в процесі..."
+  
+  try {
     const response = await fetch(webhookUrl, {
       method: 'POST',
-      // Можна нічого не передавати, якщо скрипт сам шукає задачі в Notion
       body: JSON.stringify({ action: 'generate_steps' }), 
     });
 
     if (response.ok) {
-      alert("🪄 Магія запущена! Кроки з'являться за декілька секунд.");
+      // Замість alert можна просто вивести в консоль або нічого не робити, 
+      // бо текст кнопки зміниться назад сам у block finally
+      console.log("🪄 Магія пройшла успішно");
     }
   } catch (error) {
     console.error("Помилка вебхука:", error);
-    alert("Ой, магія не спрацювала. Перевір консоль.");
   } finally {
-    setIsGenerating(false);
-    await syncWithNotion(); // Оновити список, щоб побачити зміни
+    // Чекаємо ще 2 секунди про всяк випадок перед синком, 
+    // щоб Notion встиг оновити дані
+    setTimeout(async () => {
+      await syncWithNotion();
+      setIsGenerating(false); // Повертаємо кнопку в звичайний стан
+    }, 2000);
   }
 };
 
