@@ -109,13 +109,12 @@ function App() {
               onSync={logic.syncWithNotion} 
               isSyncing={logic.isSyncing} 
               taskTimes={logic.taskTimes}
+              onToggleComplete={logic.toggleTaskStatus}
               
-              // ✨ ПІДКЛЮЧАЄМО НАШУ НОВУ ФУНКЦІЮ ✨
-              onToggleComplete={logic.toggleTaskStatus} 
-
-              onAddTask={(e) => e.preventDefault()} 
-              newTaskText="" 
-              setNewTaskText={()=>{}}
+              // ПРАВИЛЬНЕ ПІДКЛЮЧЕННЯ:
+              onAddTask={logic.handleAddTask} 
+              newTaskText={logic.newTaskText} 
+              setNewTaskText={logic.setNewTaskText}
             />
         </div>
       </div>

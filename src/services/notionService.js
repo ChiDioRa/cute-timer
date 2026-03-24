@@ -87,6 +87,31 @@ export const fetchTaskSteps = async (pageId) => {
 };
 
 /**
+ * 5. Створює нову задачу в Notion
+ */
+export const addNotionTask = async (title) => {
+  try {
+    const response = await fetch('/api/notion?endpoint=/v1/pages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        // Використовуємо import.meta.env замість process.env
+        parent: { database_id: import.meta.env.VITE_NOTION_DATABASE_ID },
+        properties: {
+          "Name": { 
+            title: [{ text: { content: title } }]
+          }
+        }
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Помилка створення задачі:", error);
+    throw error;
+  }
+};
+
+/**
  * 3. Підрахунок сумарного часу
  */
 export const fetchTaskTotalTime = async (pageId) => {

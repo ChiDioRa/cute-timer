@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { fetchNotionTasks, fetchTaskSteps, fetchTaskTotalTime, markTaskAsDone } from '../services/notionService';
+import { 
+  fetchNotionTasks, 
+  fetchTaskSteps, 
+  fetchTaskTotalTime, 
+  markTaskAsDone, 
+  addNotionTask // <--- ДОДАЙ ЦЕ СЮДИ
+} from '../services/notionService';
 
 export function useTimerLogic() {
   // 1. ІНІЦІАЛІЗАЦІЯ З LOCAL STORAGE (Завантажуємо збережене)
@@ -8,7 +14,8 @@ export function useTimerLogic() {
   const [activeTaskId, setActiveTaskId] = useState(() => localStorage.getItem('timer_active_id') || null);
   const [activeSteps, setActiveSteps] = useState(() => JSON.parse(localStorage.getItem('timer_active_steps') || '[]'));
   const [currentStepIndex, setCurrentStepIndex] = useState(() => parseInt(localStorage.getItem('timer_step_index') || '0'));
-  
+  const [newTaskText, setNewTaskText] = useState('');
+
   // Відновлюємо час. Якщо його немає — ставимо базові 25 хв (1500 сек)
   const [seconds, setSeconds] = useState(() => {
     const saved = localStorage.getItem('timer_seconds');
@@ -204,12 +211,29 @@ export function useTimerLogic() {
     }
   };
 
+  const handleAddTask = async (e) => {
+  if (e) e.preventDefault();
+  if (!newTaskText.trim()) return;
+
+  setIsSyncing(true);
+  try {
+    await addNotionTask(newTaskText); // Відправляємо в Notion
+    setNewTaskText('');              // Очищуємо поле
+    await syncWithNotion();          // Оновлюємо список задач
+  } catch (error) {
+    console.error("Не вдалося додати задачу:", error);
+  } finally {
+    setIsSyncing(false);
+  }
+};
+
 return {
     seconds, isRunning, setIsRunning, setSeconds,
     activeTaskId, tasks, activeSteps, currentStepIndex,
     isSyncing, taskTimes,
     halfwayAudioRef, warningAudioRef, finishAudioRef,
-    syncWithNotion, handleTaskClick, handleNextStep, 
+    syncWithNotion, handleTaskClick, handleNextStep, newTaskText, setNewTaskText, handleAddTask, 
+  addNotionTask, // також додай імпорт функції з сервісу
     handlePrevStep, // ✨ ОСЬ ВОНО! ТЕПЕР КНОПКА ПОБАЧИТЬ ЦЮ ФУНКЦІЮ ✨
     speak, markTaskAsDone, resetToMain, toggleTaskStatus
   };
