@@ -1,11 +1,11 @@
 const DATABASE_ID = import.meta.env.VITE_NOTION_DATABASE_ID;
 
 /**
- * 1. Отримує список задач
+ * 1. Отримує список задач та одразу рахує для них загальний час
  */
 export const fetchNotionTasks = async () => {
   try {
-    const response = await fetch(`/api/notion?endpoint=/v1/databases/${DATABASE_ID}/query`, {
+    const response = await fetch(`/api/notion?endpoint=${encodeURIComponent(`/v1/databases/${DATABASE_ID}/query`)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -19,7 +19,8 @@ export const fetchNotionTasks = async () => {
     const data = await response.json();
     if (!data.results) return [];
 
-    return data.results.map(page => {
+    // Спочатку беремо базові дані
+    const tasks = data.results.map(page => {
       const titleProp = Object.values(page.properties).find(p => p.type === 'title');
       return {
         id: page.id,
@@ -27,6 +28,15 @@ export const fetchNotionTasks = async () => {
         completed: page.properties["🌸"]?.checkbox || false
       };
     });
+
+    // ✨ МАГІЯ: Одразу підтягуємо час для кожної задачі
+    const tasksWithTime = await Promise.all(tasks.map(async (task) => {
+      const time = await fetchTaskTotalTime(task.id);
+      // Зберігаємо під двома іменами, щоб фільтр точно його знайшов
+      return { ...task, time: time, totalTime: time };
+    }));
+
+    return tasksWithTime;
   } catch (error) {
     console.error("Помилка отримання списку задач:", error);
     return [];
@@ -34,14 +44,14 @@ export const fetchNotionTasks = async () => {
 };
 
 /**
- * 2. Отримує та парсить детальні кроки
+ * 2. Отримує та парсить детальні кроки всередині сторінки задачі
  */
 export const fetchTaskSteps = async (pageId) => {
   try {
-    const response = await fetch(`/api/notion?endpoint=/v1/blocks/${pageId}/children`);
+    const response = await fetch(`/api/notion?endpoint=${encodeURIComponent(`/v1/blocks/${pageId}/children`)}`);
     const data = await response.json();
     let allSteps = [];
-    const timeRegex = /\((\d+)\s*хв\)/;
+    const timeRegex = /\((\d+)\s*хв\)/i; // 'i' означає, що ловитиме і 'хв', і 'ХВ'
 
     if (!data.results) return [];
 
@@ -81,10 +91,10 @@ export const fetchTaskSteps = async (pageId) => {
  */
 export const fetchTaskTotalTime = async (pageId) => {
   try {
-    const response = await fetch(`/api/notion?endpoint=/v1/blocks/${pageId}/children`);
+    const response = await fetch(`/api/notion?endpoint=${encodeURIComponent(`/v1/blocks/${pageId}/children`)}`);
     const data = await response.json();
     let total = 0;
-    const timeRegex = /\((\d+)\s*хв\)/g;
+    const timeRegex = /\((\d+)\s*хв\)/gi; 
 
     if (!data.results) return 0;
 
@@ -113,17 +123,35 @@ export const fetchTaskTotalTime = async (pageId) => {
  * 4. Ставить галочку в стовпці 🌸 (завершує задачу)
  */
 export const markTaskAsDone = async (pageId) => {
+  console.log("🔵 КЛІК! Спроба закрити задачу. Отриманий ID:", pageId);
+  
+  // Перевірка, чи не загубився ID по дорозі
+  if (!pageId || typeof pageId !== 'string') {
+    console.error("❌ ПОМИЛКА: pageId порожній або неправильний!", pageId);
+    return;
+  }
+
   try {
-    const response = await fetch(`/api/notion?endpoint=/v1/pages/${pageId}`, {
+    const response = await fetch(`/api/notion?endpoint=${encodeURIComponent(`/v1/pages/${pageId}`)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         properties: { "🌸": { checkbox: true } }
       })
     });
-    return await response.json();
+    
+    const data = await response.json();
+    
+    // Дивимося, що відповів Notion
+    if (data.object === 'error') {
+      console.error("❌ NOTION СВАРИТЬСЯ:", data.message);
+    } else {
+      console.log("🟢 УСПІХ! Notion прийняв галочку:", data);
+    }
+    
+    return data;
   } catch (error) {
-    console.error("Помилка оновлення чекбоксу 🌸 в Notion:", error);
+    console.error("❌ Критична помилка запиту:", error);
     throw error;
   }
 };

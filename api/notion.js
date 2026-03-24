@@ -15,9 +15,10 @@ export default async function handler(req, res) {
     }
   };
 
-  // Передаємо дані (фільтри, галочки) тільки для POST та PATCH
+// Передаємо дані (фільтри, галочки) тільки для POST та PATCH
   if (req.method !== 'GET') {
-    options.body = JSON.stringify(req.body);
+    // Страхуємось, щоб Vercel не зламав наші дані при натисканні на галочку
+    options.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
   }
 
   try {

@@ -48,7 +48,9 @@ function TaskList({
             <div className="flex items-center space-x-5 flex-1">
               {/* ГАЛОЧКА (Кнопка завершення/скасування) */}
               <button
+                type="button"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   onToggleComplete(task.id);
                 }}
@@ -64,9 +66,9 @@ function TaskList({
               </button>
 
               <div className="flex flex-col">
-                <span className={`font-bold text-sm lg:text-base transition-all duration-500 leading-tight ${
-                  task.completed ? 'text-pink-200 line-through decoration-pink-300 decoration-2' : 'text-pink-800'
-                }`}>
+              <span className={`text-sm lg:text-base transition-all duration-500 leading-tight ${
+  task.completed ? 'font-medium text-pink-300 line-through decoration-pink-200 decoration-1' : 'font-bold text-pink-800'
+}`}>
                   {task.text}
                 </span>
                 

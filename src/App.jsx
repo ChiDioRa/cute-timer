@@ -3,7 +3,7 @@ import { useTimerLogic } from './hooks/useTimerLogic';
 import Timer from './components/Timer';
 import TaskList from './components/TaskList';
 import ActiveTaskDetails from './components/ActiveTaskDetails';
-import { ArrowLeft, SortAsc, Clock, RotateCcw } from 'lucide-react';
+import { ArrowLeft, SortAsc, Clock, RefreshCw } from 'lucide-react';
 
 function App() {
   const logic = useTimerLogic();
@@ -92,12 +92,12 @@ function App() {
                   {sortMode === 'newest' ? "Нові" : "Швидкі"}
                 </button>
 
-                {/* КНОПКА СИНХРОНІЗАЦІЇ */}
+               {/* КНОПКА СИНХРОНІЗАЦІЇ */}
                 <button 
                   onClick={logic.syncWithNotion} 
-                  className={`p-3 bg-white hover:bg-pink-50 rounded-2xl text-pink-400 shadow-sm transition-all active:scale-90 border border-pink-50 ${logic.isSyncing ? 'animate-spin' : ''}`}
+                  className="p-3 bg-white hover:bg-pink-50 rounded-2xl text-pink-400 shadow-sm transition-all active:scale-90 border border-pink-50"
                 >
-                  <RotateCcw size={20} />
+                  <RefreshCw size={20} className={logic.isSyncing ? 'animate-spin' : ''} />
                 </button>
               </div>
             </div>
@@ -106,11 +106,14 @@ function App() {
               tasks={sortedTasks} 
               activeTaskId={logic.activeTaskId} 
               onTaskClick={logic.handleTaskClick}
-              onSync={() => {}} 
+              onSync={logic.syncWithNotion} 
               isSyncing={logic.isSyncing} 
               taskTimes={logic.taskTimes}
-              onToggleComplete={()=>{}}
-              onAddTask={(e)=>e.preventDefault()} 
+              
+              // ✨ ПІДКЛЮЧАЄМО НАШУ НОВУ ФУНКЦІЮ ✨
+              onToggleComplete={logic.toggleTaskStatus} 
+
+              onAddTask={(e) => e.preventDefault()} 
               newTaskText="" 
               setNewTaskText={()=>{}}
             />
