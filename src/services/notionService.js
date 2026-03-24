@@ -1,19 +1,21 @@
 const NOTION_TOKEN = import.meta.env.VITE_NOTION_TOKEN;
 const DATABASE_ID = import.meta.env.VITE_NOTION_DATABASE_ID;
 
+// Базовий URL для Notion (замінюємо проксі на прямий шлях)
+const BASE_URL = "https://api.notion.com";
+
 /**
  * 1. Отримує список задач (тільки ті, де чекбокс 🌸 НЕ поставлений)
  */
 export const fetchNotionTasks = async () => {
   try {
-    const response = await fetch(`/api-notion/v1/databases/${DATABASE_ID}/query`, {
+    const response = await fetch(`${BASE_URL}/v1/databases/${DATABASE_ID}/query`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${NOTION_TOKEN}`,
         'Notion-Version': '2022-06-28',
         'Content-Type': 'application/json',
       },
-      // ФІЛЬТР: вибираємо тільки порожні чекбокси (false)
       body: JSON.stringify({
         filter: {
           property: "🌸",
@@ -46,7 +48,7 @@ export const fetchNotionTasks = async () => {
  */
 export const fetchTaskSteps = async (pageId) => {
   try {
-    const response = await fetch(`/api-notion/v1/blocks/${pageId}/children`, {
+    const response = await fetch(`${BASE_URL}/v1/blocks/${pageId}/children`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${NOTION_TOKEN}`,
@@ -99,7 +101,7 @@ export const fetchTaskSteps = async (pageId) => {
  */
 export const fetchTaskTotalTime = async (pageId) => {
   try {
-    const response = await fetch(`/api-notion/v1/blocks/${pageId}/children`, {
+    const response = await fetch(`${BASE_URL}/v1/blocks/${pageId}/children`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${NOTION_TOKEN}`,
@@ -139,7 +141,7 @@ export const fetchTaskTotalTime = async (pageId) => {
  */
 export const markTaskAsDone = async (pageId) => {
   try {
-    const response = await fetch(`/api-notion/v1/pages/${pageId}`, {
+    const response = await fetch(`${BASE_URL}/v1/pages/${pageId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${NOTION_TOKEN}`,
