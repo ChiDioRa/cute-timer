@@ -1,25 +1,17 @@
-const NOTION_TOKEN = import.meta.env.VITE_NOTION_TOKEN;
 const DATABASE_ID = import.meta.env.VITE_NOTION_DATABASE_ID;
 
 /**
- * 1. Отримує список задач (тільки ті, де чекбокс 🌸 НЕ поставлений)
+ * 1. Отримує список задач
  */
 export const fetchNotionTasks = async () => {
   try {
-    const response = await fetch(`/api-notion/v1/databases/${DATABASE_ID}/query`, {
+    const response = await fetch(`/api/notion?endpoint=/v1/databases/${DATABASE_ID}/query`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${NOTION_TOKEN}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json',
-      },
-      // ФІЛЬТР: вибираємо тільки порожні чекбокси (false)
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         filter: {
           property: "🌸",
-          checkbox: {
-            equals: false
-          }
+          checkbox: { equals: false }
         }
       })
     });
@@ -42,18 +34,11 @@ export const fetchNotionTasks = async () => {
 };
 
 /**
- * 2. Отримує та парсить детальні кроки всередині сторінки задачі
+ * 2. Отримує та парсить детальні кроки
  */
 export const fetchTaskSteps = async (pageId) => {
   try {
-    const response = await fetch(`/api-notion/v1/blocks/${pageId}/children`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${NOTION_TOKEN}`,
-        'Notion-Version': '2022-06-28',
-      },
-    });
-    
+    const response = await fetch(`/api/notion?endpoint=/v1/blocks/${pageId}/children`);
     const data = await response.json();
     let allSteps = [];
     const timeRegex = /\((\d+)\s*хв\)/;
@@ -78,10 +63,7 @@ export const fetchTaskSteps = async (pageId) => {
               .trim();
 
             if (cleanText.length > 2) {
-              allSteps.push({
-                text: cleanText,
-                minutes: parseInt(timeMatch[1])
-              });
+              allSteps.push({ text: cleanText, minutes: parseInt(timeMatch[1]) });
             }
           }
         });
@@ -99,14 +81,7 @@ export const fetchTaskSteps = async (pageId) => {
  */
 export const fetchTaskTotalTime = async (pageId) => {
   try {
-    const response = await fetch(`/api-notion/v1/blocks/${pageId}/children`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${NOTION_TOKEN}`,
-        'Notion-Version': '2022-06-28',
-      },
-    });
-    
+    const response = await fetch(`/api/notion?endpoint=/v1/blocks/${pageId}/children`);
     const data = await response.json();
     let total = 0;
     const timeRegex = /\((\d+)\s*хв\)/g;
@@ -139,22 +114,13 @@ export const fetchTaskTotalTime = async (pageId) => {
  */
 export const markTaskAsDone = async (pageId) => {
   try {
-    const response = await fetch(`/api-notion/v1/pages/${pageId}`, {
+    const response = await fetch(`/api/notion?endpoint=/v1/pages/${pageId}`, {
       method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${NOTION_TOKEN}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        properties: {
-          "🌸": {
-            checkbox: true
-          }
-        }
+        properties: { "🌸": { checkbox: true } }
       })
     });
-    
     return await response.json();
   } catch (error) {
     console.error("Помилка оновлення чекбоксу 🌸 в Notion:", error);
