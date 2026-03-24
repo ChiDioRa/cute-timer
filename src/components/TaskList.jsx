@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Clock, Plus } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Plus, Wand2 } from 'lucide-react';
 
 function TaskList({ 
   tasks, 
@@ -8,6 +8,9 @@ function TaskList({
   onAddTask, 
   newTaskText, 
   setNewTaskText, 
+  // 👇 ДОДАЙ ЦІ ДВА РЯДКИ СЮДИ:
+  onGenerateSteps,
+  isGenerating,
   onSync,
   taskTimes = {} 
 }) {
@@ -83,6 +86,7 @@ function TaskList({
               </div>
             </div>
             
+            
             {activeTaskId === task.id && !task.completed && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-pink-50 rounded-full animate-pulse">
                 <div className="w-2 h-2 bg-pink-500 rounded-full shadow-[0_0_8px_rgba(236,72,153,0.5)]" />
@@ -91,8 +95,22 @@ function TaskList({
             )}
           </div>
         ))}
+        {/* КНОПКА ГЕНЕРАЦІЇ КРОКІВ */}
+      <button
+        onClick={onGenerateSteps}
+        disabled={isGenerating}
+        className={`w-full mt-6 py-4 px-6 rounded-[28px] border-2 border-dashed transition-all duration-500 flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-[0.2em]
+          ${isGenerating 
+            ? 'border-pink-200 text-pink-200 cursor-wait' 
+            : 'border-pink-100 text-pink-300 hover:border-pink-300 hover:text-pink-500 hover:bg-white/50'
+          }`}
+      >
+        <Wand2 size={16} className={isGenerating ? 'animate-bounce' : ''} />
+        {isGenerating ? 'Магія в процесі...' : 'Згенерувати кроки на нові задачі'}
+      </button>
       </div>
     </div>
+    
   );
 }
 

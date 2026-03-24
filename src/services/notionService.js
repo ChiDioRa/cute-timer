@@ -95,18 +95,22 @@ export const addNotionTask = async (title) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        // Використовуємо import.meta.env замість process.env
         parent: { database_id: import.meta.env.VITE_NOTION_DATABASE_ID },
         properties: {
+          // Назва задачі
           "Name": { 
             title: [{ text: { content: title } }]
+          },
+          // ✨ ТВІЙ МАГІЧНИЙ ЧЕКБОКС ✨
+          "🪄": { 
+            "checkbox": true 
           }
         }
       })
     });
     return await response.json();
   } catch (error) {
-    console.error("Помилка створення задачі:", error);
+    console.error("Помилка створення задачі з магією:", error);
     throw error;
   }
 };

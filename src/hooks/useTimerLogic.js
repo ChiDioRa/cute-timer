@@ -15,6 +15,7 @@ export function useTimerLogic() {
   const [activeSteps, setActiveSteps] = useState(() => JSON.parse(localStorage.getItem('timer_active_steps') || '[]'));
   const [currentStepIndex, setCurrentStepIndex] = useState(() => parseInt(localStorage.getItem('timer_step_index') || '0'));
   const [newTaskText, setNewTaskText] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Відновлюємо час. Якщо його немає — ставимо базові 25 хв (1500 сек)
   const [seconds, setSeconds] = useState(() => {
@@ -227,6 +228,30 @@ export function useTimerLogic() {
   }
 };
 
+const handleGenerateSteps = async () => {
+  setIsGenerating(true);
+  try {
+    // Заміни URL на свій реальний вебхук з Make/Zapier
+    const webhookUrl = import.meta.env.VITE_GENERATE_STEPS_WEBHOOK; 
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      // Можна нічого не передавати, якщо скрипт сам шукає задачі в Notion
+      body: JSON.stringify({ action: 'generate_steps' }), 
+    });
+
+    if (response.ok) {
+      alert("🪄 Магія запущена! Кроки з'являться за декілька секунд.");
+    }
+  } catch (error) {
+    console.error("Помилка вебхука:", error);
+    alert("Ой, магія не спрацювала. Перевір консоль.");
+  } finally {
+    setIsGenerating(false);
+    await syncWithNotion(); // Оновити список, щоб побачити зміни
+  }
+};
+
 return {
     seconds, isRunning, setIsRunning, setSeconds,
     activeTaskId, tasks, activeSteps, currentStepIndex,
@@ -235,6 +260,6 @@ return {
     syncWithNotion, handleTaskClick, handleNextStep, newTaskText, setNewTaskText, handleAddTask, 
   addNotionTask, // також додай імпорт функції з сервісу
     handlePrevStep, // ✨ ОСЬ ВОНО! ТЕПЕР КНОПКА ПОБАЧИТЬ ЦЮ ФУНКЦІЮ ✨
-    speak, markTaskAsDone, resetToMain, toggleTaskStatus
+    speak, markTaskAsDone, resetToMain, toggleTaskStatus, isGenerating, handleGenerateSteps
   };
 }

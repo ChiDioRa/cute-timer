@@ -115,6 +115,8 @@ function App() {
               onAddTask={logic.handleAddTask} 
               newTaskText={logic.newTaskText} 
               setNewTaskText={logic.setNewTaskText}
+              onGenerateSteps={logic.handleGenerateSteps}
+  isGenerating={logic.isGenerating}
             />
         </div>
       </div>
