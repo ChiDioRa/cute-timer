@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api-notion/(.*)",
-      "destination": "https://api.notion.com/$1"
+      "source": "/api-notion/:path*",
+      "destination": "https://api.notion.com/:path*"
     }
   ]
 }
