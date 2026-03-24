@@ -124,6 +124,16 @@ export function useTimerLogic() {
       speak(`Наступний крок: ${activeSteps[nextIndex].text}`);
     }
   };
+  // ФУНКЦІЯ ПЕРЕХОДУ НА ПОПЕРЕДНІЙ КРОК
+  const handlePrevStep = () => {
+    if (currentStepIndex > 0) {
+      const prevIndex = currentStepIndex - 1;
+      setCurrentStepIndex(prevIndex);
+      setSeconds(activeSteps[prevIndex].minutes * 60); // Повертаємо час цього кроку
+      speak(`Повертаємось до кроку: ${activeSteps[prevIndex].text}`);
+      setIsRunning(false); // Краще зупинити таймер при переході назад
+    }
+  };
 
   // ПОВЕРНЕННЯ В ГОЛОВНЕ МЕНЮ (якщо ти вийшла з задачі)
   const resetToMain = () => {
@@ -199,7 +209,8 @@ return {
     activeTaskId, tasks, activeSteps, currentStepIndex,
     isSyncing, taskTimes,
     halfwayAudioRef, warningAudioRef, finishAudioRef,
-    syncWithNotion, handleTaskClick, handleNextStep, speak, 
-    markTaskAsDone, resetToMain, toggleTaskStatus // <--- додано сюди
+    syncWithNotion, handleTaskClick, handleNextStep, 
+    handlePrevStep, // ✨ ОСЬ ВОНО! ТЕПЕР КНОПКА ПОБАЧИТЬ ЦЮ ФУНКЦІЮ ✨
+    speak, markTaskAsDone, resetToMain, toggleTaskStatus
   };
 }

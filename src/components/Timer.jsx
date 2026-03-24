@@ -1,4 +1,4 @@
-import { Play, Pause, RotateCcw, Coffee, Target, Brain, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { Play, Pause, RefreshCw, Coffee, Target, Brain, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 
 function Timer({ 
   seconds, isRunning, setIsRunning, setSeconds, 
@@ -23,14 +23,12 @@ function Timer({
   const isOvertime = seconds < 0;
   const isLastStep = activeSteps && activeSteps.length > 0 && currentStepIndex === activeSteps.length - 1;
 
-  // Функція для обробки натискання Play/Pause з озвучкою
   const handleTogglePlay = () => {
     const nextState = !isRunning;
     setIsRunning(nextState);
 
     if (nextState && !showModeButtons) {
       const currentStep = activeSteps[currentStepIndex];
-      // Перевіряємо, чи ми на самому початку кроку
       const isInitialStart = seconds === (currentStep?.minutes * 60);
       
       if (isInitialStart) {
@@ -45,21 +43,28 @@ function Timer({
     <div className={`relative bg-white rounded-[45px] shadow-2xl p-10 w-full flex flex-col items-center transition-all duration-700 
       ${isOvertime ? 'ring-[12px] ring-rose-200 bg-rose-50/30' : 'ring-8 ring-pink-100'}`}>
       
-      {/* ІНДИКАТОР КРОКІВ (PROGRESS BARS) */}
+      {/* ІНДИКАТОР КРОКІВ */}
       {!showModeButtons && activeSteps && activeSteps.length > 0 && (
-        <div className="absolute top-8 left-0 right-0 flex justify-center gap-1.5 px-6">
-          {activeSteps.map((_, index) => (
-            <div 
-              key={index}
-              className={`h-1.5 rounded-full transition-all duration-700 ${
-                index === currentStepIndex 
-                  ? 'w-8 bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.4)]' 
-                  : index < currentStepIndex 
-                    ? 'w-4 bg-emerald-300 shadow-[0_0_5px_rgba(110,231,183,0.3)]' 
-                    : 'w-4 bg-pink-50'
-              }`}
-            />
-          ))}
+        <div className="absolute top-6 left-0 right-0 flex flex-col items-center gap-2 px-6">
+          
+          <span className="text-[10px] font-black text-pink-300 uppercase tracking-[0.2em] animate-in fade-in zoom-in duration-500">
+            Крок {Number(currentStepIndex) + 1} з {activeSteps.length}
+          </span>
+          
+          <div className="flex justify-center gap-1.5 w-full">
+            {activeSteps.map((_, index) => (
+              <div 
+                key={index}
+                className={`h-1.5 rounded-full transition-all duration-700 ${
+                  index === currentStepIndex 
+                    ? 'w-8 bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.4)]' 
+                    : index < currentStepIndex 
+                      ? 'w-4 bg-emerald-300 shadow-[0_0_5px_rgba(110,231,183,0.3)]' 
+                      : 'w-4 bg-pink-50'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       )}
 
@@ -115,7 +120,7 @@ function Timer({
           onClick={() => { setIsRunning(false); setSeconds(25 * 60); }} 
           className="w-20 h-20 bg-pink-50 text-pink-300 rounded-full hover:bg-pink-100 hover:text-pink-400 transition-all active:scale-90 shadow-sm flex items-center justify-center"
         >
-          <RotateCcw size={32} strokeWidth={3} />
+          <RefreshCw size={32} strokeWidth={3} />
         </button>
       </div>
 
@@ -140,7 +145,11 @@ function Timer({
 
           {currentStepIndex > 0 && (
             <button 
-              onClick={handlePrevStep}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                handlePrevStep();
+              }}
               className="w-full flex items-center justify-center gap-2 text-pink-200 font-black text-[11px] uppercase tracking-widest hover:text-pink-400 transition-colors"
             >
               <ChevronLeft size={14} /> повернутись назад
