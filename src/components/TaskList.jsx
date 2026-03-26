@@ -4,11 +4,10 @@ function TaskList({
   tasks, 
   activeTaskId, 
   onTaskClick, 
-  onToggleComplete, // Тепер ця функція буде обробляти і завершення, і повернення
+  onToggleComplete, 
   onAddTask, 
   newTaskText, 
   setNewTaskText, 
-  // 👇 ДОДАЙ ЦІ ДВА РЯДКИ СЮДИ:
   onGenerateSteps,
   isGenerating,
   onSync,
@@ -25,11 +24,11 @@ function TaskList({
           value={newTaskText}
           onChange={(e) => setNewTaskText(e.target.value)}
           placeholder="Що заплануємо?.."
-          className="w-full p-6 pr-20 bg-white/80 backdrop-blur-md border-2 border-transparent focus:border-pink-200 focus:bg-white rounded-[32px] outline-none transition-all font-bold text-pink-600 placeholder:text-pink-200 shadow-sm group-hover:shadow-md"
+          className="w-full p-6 pr-20 bg-containerBg backdrop-blur-md border-2 border-transparent focus:border-accentMuted focus:bg-containerBg rounded-[32px] outline-none transition-all font-bold text-accent placeholder:text-accentMuted shadow-theme-sm group-hover:shadow-theme-lg"
         />
         <button 
           type="submit"
-          className="absolute right-3 top-3 p-4 bg-pink-500 text-white rounded-[24px] hover:bg-pink-600 transition-all shadow-lg shadow-pink-100 active:scale-95"
+          className="absolute right-3 top-3 p-4 bg-accent text-accentText rounded-[24px] hover:bg-accentHover transition-all shadow-theme-sm active:scale-95"
         >
           <Plus size={24} />
         </button>
@@ -43,10 +42,10 @@ function TaskList({
             onClick={() => !task.completed && onTaskClick(task.id)}
             className={`group flex items-center justify-between p-6 rounded-[35px] cursor-pointer transition-all duration-500 ${
               task.completed 
-                ? 'bg-pink-50/50 border-4 border-transparent opacity-60' 
+                ? 'bg-containerBg opacity-60 border-4 border-transparent' 
                 : activeTaskId === task.id 
-                  ? 'bg-white border-4 border-pink-100 shadow-xl scale-[1.02]' 
-                  : 'bg-white/60 border-4 border-transparent hover:bg-white hover:shadow-md'
+                  ? 'bg-containerBg border-4 border-containerBorder shadow-theme-lg scale-[1.02]' 
+                  : 'bg-containerBg/80 border-4 border-transparent hover:bg-containerBg hover:shadow-theme-sm'
             }`}
           >
             <div className="flex items-center space-x-5 flex-1">
@@ -59,7 +58,7 @@ function TaskList({
                   onToggleComplete(task.id);
                 }}
                 className={`transition-all duration-500 transform active:scale-50 ${
-                  task.completed ? 'text-emerald-400 scale-110' : 'text-pink-100 group-hover:text-pink-300'
+                  task.completed ? 'text-emerald-400 scale-110' : 'text-containerBorder group-hover:text-accentMuted'
                 }`}
               >
                 {task.completed ? (
@@ -69,19 +68,17 @@ function TaskList({
                 )}
               </button>
 
-              
-              
               <div className="flex flex-col">
-              <span className={`text-sm lg:text-base transition-all duration-500 leading-tight ${
-  task.completed ? 'font-medium text-pink-300 line-through decoration-pink-200 decoration-1' : 'font-bold text-pink-800'
-}`}>
+                <span className={`text-sm lg:text-base transition-all duration-500 leading-tight ${
+                  task.completed ? 'font-medium text-accentMuted line-through decoration-containerBorder decoration-1' : 'font-bold text-appText'
+                }`}>
                   {task.text}
                 </span>
                 
                 {!task.completed && taskTimes[task.id] && (
                   <div className="flex items-center gap-1.5 mt-1">
-                    <Clock size={12} className="text-pink-300" />
-                    <span className="text-[10px] font-black text-pink-400 uppercase tracking-widest">
+                    <Clock size={12} className="text-accentMuted" />
+                    <span className="text-[10px] font-black text-accentMuted uppercase tracking-widest">
                       {taskTimes[task.id]} хв всього
                     </span>
                   </div>
@@ -90,42 +87,43 @@ function TaskList({
               </div>
             </div>
             
-            
+            {/* БЕЙДЖ "ЗАРАЗ" */}
             {activeTaskId === task.id && !task.completed && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-pink-50 rounded-full animate-pulse">
-                <div className="w-2 h-2 bg-pink-500 rounded-full shadow-[0_0_8px_rgba(236,72,153,0.5)]" />
-                <span className="text-[9px] font-black text-pink-500 uppercase tracking-widest">Зараз</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-activeTaskBg rounded-full animate-pulse">
+                <div className="w-2 h-2 bg-accent rounded-full shadow-theme-sm" />
+                <span className="text-[9px] font-black text-accent uppercase tracking-widest">Зараз</span>
               </div>
             )}
-            {/* ✨ КНОПКА ВИДАЛЕННЯ ✨ */}
+            
+            {/* КНОПКА ВИДАЛЕННЯ */}
             <button 
               onClick={(e) => {
-                e.stopPropagation(); // Щоб не відкрився таймер при кліку на смітник
+                e.stopPropagation(); 
                 onDeleteTask(task.id);
               }}
-              className="opacity-0 group-hover:opacity-100 ml-2 p-2 text-pink-100 hover:text-rose-400 hover:bg-rose-50 rounded-full transition-all duration-300"
+              className="opacity-0 group-hover:opacity-100 ml-2 p-2 text-containerBorder hover:text-accent hover:bg-activeTaskBg rounded-full transition-all duration-300"
               title="Видалити задачу"
             >
               <Trash2 size={16} />
             </button>
           </div>
         ))}
+
         {/* КНОПКА ГЕНЕРАЦІЇ КРОКІВ */}
-      <button
-        onClick={onGenerateSteps}
-        disabled={isGenerating}
-        className={`w-full mt-6 py-4 px-6 rounded-[28px] border-2 border-dashed transition-all duration-500 flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-[0.2em]
-          ${isGenerating 
-            ? 'border-pink-200 text-pink-200 cursor-wait' 
-            : 'border-pink-100 text-pink-300 hover:border-pink-300 hover:text-pink-500 hover:bg-white/50'
-          }`}
-      >
-        <Wand2 size={16} className={isGenerating ? 'animate-bounce' : ''} />
-        {isGenerating ? 'Магія в процесі...' : 'Згенерувати кроки на нові задачі'}
-      </button>
+        <button
+          onClick={onGenerateSteps}
+          disabled={isGenerating}
+          className={`w-full mt-6 py-4 px-6 rounded-[28px] border-2 border-dashed transition-all duration-500 flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-[0.2em]
+            ${isGenerating 
+              ? 'border-containerBorder text-containerBorder cursor-wait' 
+              : 'border-containerBorder text-accentMuted hover:border-accentMuted hover:text-accent hover:bg-activeTaskBg'
+            }`}
+        >
+          <Wand2 size={16} className={isGenerating ? 'animate-bounce' : ''} />
+          {isGenerating ? 'Магія в процесі...' : 'Згенерувати кроки на нові задачі'}
+        </button>
       </div>
     </div>
-    
   );
 }
 

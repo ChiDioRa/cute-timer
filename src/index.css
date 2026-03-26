@@ -1,1 +1,81 @@
 @import "tailwindcss";
+
+@theme {
+  --color-appBg: var(--app-bg);
+  --color-appText: var(--app-text);
+  --color-containerBg: var(--container-bg);
+  --color-containerBorder: var(--container-border);
+  --color-accent: var(--accent);
+  --color-accentHover: var(--accent-hover);
+  --color-accentText: var(--accent-text);
+  --color-activeTaskBg: var(--active-task-bg);
+  --color-accentMuted: var(--accent-muted);
+  --color-timerRing: var(--timer-ring);
+  
+  --shadow-theme-sm: 0 4px 6px -1px var(--shadow-color);
+  --shadow-theme-lg: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -4px var(--shadow-color);
+}
+
+/* 🌸 САКУРА ТЕМА (за замовчуванням) */
+:root, [data-theme="sakura"] {
+  --app-bg: #fff1f2;            
+  --app-text: #9d174d;         
+  --container-bg: rgba(255, 255, 255, 0.8); 
+  --container-border: #fce7f3;  
+  --accent: #f472b6;       
+  --accent-hover: #ec4899; 
+  --accent-text: #ffffff;       
+  --active-task-bg: #fff1f2; 
+  --accent-muted: #fbcfe8; 
+  --timer-ring: #fce7f3;   
+  --shadow-color: rgba(0, 0, 0, 0.1); 
+
+  /* Ніжно-червоний для сакури */
+  --overtime-bg: rgba(255, 228, 230, 0.3); /* rose-50/30 */
+  --overtime-ring: #fecdd3;                /* rose-200 */
+  --overtime-text: #f43f5e;
+}
+
+/* 🌙 МІДНАЙТ ТЕМА */
+[data-theme="midnight"] {
+  --app-bg: #0f1021;            
+  --app-text: #f8fafc;          
+  --container-bg: rgba(30, 41, 59, 0.8);      
+  --container-border: #334155;                
+  --accent: #c026d3;       
+  --accent-hover: #d946ef; 
+  --accent-text: #ffffff;
+  --active-task-bg: rgba(192, 38, 211, 0.1);    
+  --accent-muted: #e879f9;      
+  --timer-ring: rgba(192, 38, 211, 0.2);
+  --shadow-color: rgba(192, 38, 211, 0.15); 
+
+  /* Магічний неоново-червоний для міднайту */
+  --overtime-bg: rgba(225, 29, 72, 0.1);   /* rose-600/10 */
+  --overtime-ring: rgba(225, 29, 72, 0.4); /* rose-600/40 */
+  --overtime-text: #fb7185;                /* rose-400 */
+}
+
+/* 🍵 МАТЧА ТЕМА */
+[data-theme="matcha"] {
+  --app-bg: #ecfdf5;                  
+  --app-text: #064e3b;              
+  --container-bg: rgba(255, 255, 255, 0.8); 
+  --container-border: #d1fae5;  
+  --accent: #34d399;       
+  --accent-hover: #10b981; 
+  --accent-text: #ffffff;       
+  --active-task-bg: #ecfdf5; 
+  --accent-muted: #a7f3d0; 
+  --timer-ring: #d1fae5;
+  --shadow-color: rgba(0, 0, 0, 0.1); 
+
+  /* Теплий помаранчево-кораловий для матчі, щоб пасував до зелені */
+  --overtime-bg: rgba(255, 237, 213, 0.4); /* orange-50/40 */
+  --overtime-ring: #fed7aa;                /* orange-200 */
+  --overtime-text: #ea580c;                /* orange-600 */
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
