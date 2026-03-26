@@ -18,7 +18,7 @@
 
 /* 🌸 САКУРА ТЕМА (за замовчуванням) */
 :root, [data-theme="sakura"] {
-  --app-bg: #fff1f2;            
+  --app-bg: #fff1f7;            
   --app-text: #9d174d;         
   --container-bg: rgba(255, 255, 255, 0.8); 
   --container-border: #fce7f3;  
@@ -26,7 +26,7 @@
   --accent-hover: #ec4899; 
   --accent-text: #ffffff;       
   --active-task-bg: #fff1f2; 
-  --accent-muted: #fbcfe8; 
+  --accent-muted: #fabfe0; 
   --timer-ring: #fce7f3;   
   --shadow-color: rgba(0, 0, 0, 0.1); 
 

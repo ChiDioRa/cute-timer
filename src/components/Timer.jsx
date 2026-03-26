@@ -42,7 +42,7 @@ function Timer({
   return (
   
 <div className={`relative bg-containerBg rounded-[45px] shadow-2xl p-10 w-full flex flex-col items-center transition-all duration-700 
-  ${isOvertime ? 'ring-[8px] ring-overtimeRing bg-overtimeBg' : 'ring-6 ring-timerRing'}`}>
+  ${isOvertime ? 'ring-[10px] ring-overtimeRing bg-overtimeBg' : 'ring-8 ring-timerRing'}`}>
         
       {/* ІНДИКАТОР КРОКІВ */}
       {!showModeButtons && activeSteps && activeSteps.length > 0 && (
