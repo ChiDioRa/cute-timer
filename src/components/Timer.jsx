@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Heart,
   Play,
@@ -74,6 +74,26 @@ function Timer({
       drift: (Math.random() - 0.5) * 100,
     }));
   }, [activeTaskText]);
+
+  // ✨ ГОЛОСОВІ СПОВІЩЕННЯ ✨
+  useEffect(() => {
+    if (!isRunning) return;
+
+    // Загальний час на крок (наприклад, 5 хвилин = 300 секунд)
+    const planSeconds = 300;
+
+    if (seconds === Math.floor(planSeconds / 2)) {
+      speak("Минула половина часу. Ти чудово справляєшся!");
+    }
+
+    if (seconds === planSeconds - 30) {
+      speak("Залишилося 30 секунд. Будемо завершувати.");
+    }
+
+    if (seconds === planSeconds) {
+      speak("Час вийшов! Робимо перерву чи продовжуємо?");
+    }
+  }, [seconds, isRunning, speak]);
 
   return (
     <div
@@ -227,13 +247,13 @@ function Timer({
           </span>
         </div>
 
-{/* ✨ СЕРДЕЧКО З АНІМАЦІЄЮ ✨ */}
-  <Heart 
-    size={32} 
-    className={`text-accent fill-pink-100/30 translate-y-2 transition-all duration-500
-      ${isRunning ? 'animate-pulse scale-110 text-accent' : 'opacity-50'}
-    `} 
-  />
+        {/* ✨ СЕРДЕЧКО З АНІМАЦІЄЮ ✨ */}
+        <Heart
+          size={32}
+          className={`text-accent fill-pink-100/30 translate-y-2 transition-all duration-500
+      ${isRunning ? "animate-pulse scale-110 text-accent" : "opacity-50"}
+    `}
+        />
 
         <div className="flex flex-col items-end gap-1">
           <span className="text-[10px] font-black text-accentMuted uppercase tracking-widest opacity-40">

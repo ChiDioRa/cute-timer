@@ -81,6 +81,7 @@ const syncWithNotion = async () => {
   const handleManualSync = async () => {
     setIsSyncing(true);
     try {
+        const freshTasks = await fetchNotionTasks();
       // Тепер seconds визначено, і помилки не буде!
       if (activeTaskId) {
         await updateTaskProgress(activeTaskId, currentStepIndex, seconds);
