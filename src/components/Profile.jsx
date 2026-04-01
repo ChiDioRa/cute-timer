@@ -9,12 +9,13 @@ export default function Profile({ level, xpInLevel, energy, setEnergy, theme, se
   };
 
   return (
-    /* ✨ 1. ЗБІЛЬШУЄМО ШИРИНУ: тепер max-w-5xl ✨ */
-    <div className="w-full max-w-5xl mx-auto mb-10 px-4">
-      <div className="flex flex-col lg:flex-row justify-center items-center gap-4">
+    <div className="w-full max-w-5xl mx-auto mb-12 px-4">
+      
+      {/* Головний контейнер: на ПК gap-6, на мобільному gap-3 */}
+      <div className="flex flex-col lg:flex-row justify-center items-center gap-3 lg:gap-6">
         
-        {/* КАРТКА 1: LVL ТА XP (Найбільша) */}
-        <div className="w-full lg:flex-[1.2] flex items-center gap-4 bg-containerBg/80 backdrop-blur-sm p-4 pr-8 rounded-[28px] border border-containerBorder shadow-theme-sm">
+        {/* КАРТКА 1: LVL ТА XP */}
+        <div className="w-full lg:flex-[1.1] flex items-center gap-4 bg-containerBg/80 backdrop-blur-sm p-4 pr-8 rounded-[28px] border border-containerBorder shadow-theme-sm">
           <div className="w-14 h-14 bg-accent rounded-2xl flex flex-col items-center justify-center text-accentText shadow-lg shrink-0">
             <span className="text-[10px] font-black leading-none opacity-70 uppercase">Lvl</span>
             <span className="text-2xl font-black leading-none">{level}</span>
@@ -34,41 +35,49 @@ export default function Profile({ level, xpInLevel, energy, setEnergy, theme, se
           </div>
         </div>
 
-        {/* КАРТКА 2: ЕНЕРГІЯ (Середня) */}
-        <div className="w-full lg:flex-1 flex items-center justify-center gap-4 bg-containerBg/80 backdrop-blur-sm p-4 px-8 rounded-[28px] border border-containerBorder shadow-theme-sm">
-          <Zap size={20} className={`${energy <= 20 ? 'text-rose-400' : 'text-amber-400'} fill-current shrink-0`} />
-          <div className="flex gap-2">
-            {[...Array(5)].map((_, i) => {
-              const dotValue = (i + 1) * 20;
-              return (
-                <button 
-                  key={i} 
-                  onClick={() => setEnergy(dotValue)}
-                  className={`w-5 h-5 rounded-lg transition-all duration-300 border-b-2 active:scale-75
-                    ${energy >= dotValue ? `${getEnergyColor(energy)} shadow-md` : 'bg-accent/5 border-accent/10 opacity-60 hover:opacity-100'}`}
-                />
-              );
-            })}
+        {/* ✨ МАГІЯ ТУТ: lg:contents змушує цю обгортку "зникнути" на ПК, 
+            роблячи Енергію та Скіни прямими сусідами LVL-картки ✨ */}
+        <div className="w-full flex flex-row gap-3 lg:contents">
+          
+          {/* КАРТКА 2: ЕНЕРГІЯ */}
+          {/* Додали lg:flex-1, щоб на ПК вона тягнулася самостійно */}
+          <div className="flex-[1.5] lg:flex-1 flex items-center justify-center gap-2 sm:gap-4 bg-containerBg/80 backdrop-blur-sm p-3 sm:p-4 lg:px-8 rounded-[28px] border border-containerBorder shadow-theme-sm">
+            <Zap size={20} className={`${energy <= 20 ? 'text-rose-400' : 'text-amber-400'} fill-current shrink-0`} />
+            <div className="flex gap-1.5 sm:gap-2">
+              {[...Array(5)].map((_, i) => {
+                const dotValue = (i + 1) * 20;
+                return (
+                  <button 
+                    key={i} 
+                    onClick={() => setEnergy(dotValue)}
+                    className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-5 lg:h-5 rounded-md sm:rounded-lg transition-all duration-300 border-b-2 active:scale-75
+                      ${energy >= dotValue ? `${getEnergyColor(energy)} shadow-md` : 'bg-accent/5 border-accent/10 opacity-60 hover:opacity-100'}`}
+                  />
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* КАРТКА 3: СКІНИ (Компактна) */}
-        <div className="w-full lg:w-fit flex items-center gap-5 bg-containerBg/80 backdrop-blur-sm p-4 px-8 rounded-[28px] border border-containerBorder shadow-theme-sm">
-          <div className="flex flex-col items-start leading-none opacity-40">
-            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-accent">Skins</span>
-            <Palette size={12} className="mt-1" />
+          {/* КАРТКА 3: СКІНИ */}
+          {/* Додали lg:flex-none lg:w-fit, щоб на ПК вона мала свій акуратний розмір */}
+          <div className="flex-1 lg:flex-none lg:w-fit flex items-center justify-center gap-2 sm:gap-4 bg-containerBg/80 backdrop-blur-sm p-3 sm:p-4 lg:px-8 rounded-[28px] border border-containerBorder shadow-theme-sm">
+            <div className="hidden sm:flex flex-col items-start leading-none opacity-40">
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-accent">Skins</span>
+              <Palette size={12} className="mt-1" />
+            </div>
+            <div className="flex gap-2 sm:gap-3">
+              {['sakura', 'midnight', 'matcha'].map((t) => (
+                <button 
+                  key={t}
+                  onClick={() => setTheme(t)} 
+                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full transition-all duration-300 hover:rotate-12 hover:scale-125
+                    ${t === 'sakura' ? 'bg-pink-300' : t === 'midnight' ? 'bg-slate-800' : 'bg-emerald-300'}
+                    ${theme === t ? 'ring-2 ring-offset-2 ring-accent scale-110 shadow-lg' : 'opacity-30 hover:opacity-100'}`} 
+                />
+              ))}
+            </div>
           </div>
-          <div className="flex gap-3">
-            {['sakura', 'midnight', 'matcha'].map((t) => (
-              <button 
-                key={t}
-                onClick={() => setTheme(t)} 
-                className={`w-6 h-6 rounded-full transition-all duration-300 hover:rotate-12 hover:scale-125
-                  ${t === 'sakura' ? 'bg-pink-300' : t === 'midnight' ? 'bg-slate-800' : 'bg-emerald-300'}
-                  ${theme === t ? 'ring-2 ring-offset-2 ring-accent scale-110 shadow-lg' : 'opacity-30 hover:opacity-100'}`} 
-              />
-            ))}
-          </div>
+
         </div>
 
       </div>

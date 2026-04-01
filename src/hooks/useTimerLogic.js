@@ -26,6 +26,8 @@ export function useTimerLogic() {
 
   const wakeLockRef = useRef(null); 
   const { speak } = useVoice(); 
+  // Зберігає стан задачі на момент її відкриття ✨
+const initialTaskState = useRef({ step: 0, seconds: 0 });
 
   // --- 2. ОБРОБКА СПИСКУ ЗАДАЧ (Фільтр + Сортування) ✨ ---
   // Ми винесли це з функцій на верхній рівень
@@ -97,49 +99,67 @@ useEffect(() => {
   };
 
 const handleTaskClick = async (id) => {
-  // 1. ВІДКРИВАЄМО ВІКНО ТАЙМЕРА НА МОБІЛЬНОМУ ✨
-  setIsTimerOpen(true); 
+    setIsTimerOpen(true);
+    if (activeTaskId === id) return;
 
-  // 2. Якщо ми натиснули на ту саму задачу, що вже запущена — 
-  // просто залишаємо все як є (таймер продовжить іти)
-  if (activeTaskId === id) return;
+    setActiveTaskId(id);
+    const targetTask = tasks.find((t) => t.id === id);
 
-  // 3. Якщо це нова задача — перемикаємо ID та завантажуємо кроки
-  setActiveTaskId(id);
-  const targetTask = tasks.find(t => t.id === id);
-  
-  if (stepsCache[id]) {
-    setActiveSteps(stepsCache[id]);
-    setCurrentStepIndex(targetTask?.savedStep || 0);
-    setSeconds(targetTask?.savedSeconds || 0);
-    return;
-  }
-
-  setIsSyncing(true);
-  try {
-    const steps = await fetchTaskSteps(id); 
-    if (steps?.length > 0) {
-      setStepsCache(prev => ({ ...prev, [id]: steps }));
-      setActiveSteps(steps);
-      setCurrentStepIndex(targetTask?.savedStep || 0);
-      setSeconds(targetTask?.savedSeconds || 0);
+    if (stepsCache[id]) {
+      setActiveSteps(stepsCache[id]);
+      const savedStep = targetTask?.savedStep || 0;
+      const savedSeconds = targetTask?.savedSeconds || 0;
+      
+      setCurrentStepIndex(savedStep);
+      setSeconds(savedSeconds);
+      
+      // ✨ ЗАПАМ'ЯТОВУЄМО ПОЧАТКОВИЙ СТАН ✨
+      initialTaskState.current = { step: savedStep, seconds: savedSeconds };
+      return;
     }
-  } finally {
-    setIsSyncing(false);
-  }
-};
+
+    setIsSyncing(true);
+    try {
+      const steps = await fetchTaskSteps(id);
+      if (steps?.length > 0) {
+        setStepsCache((prev) => ({ ...prev, [id]: steps }));
+        setActiveSteps(steps);
+        
+        const savedStep = targetTask?.savedStep || 0;
+        const savedSeconds = targetTask?.savedSeconds || 0;
+        
+        setCurrentStepIndex(savedStep);
+        setSeconds(savedSeconds);
+
+        // ✨ ЗАПАМ'ЯТОВУЄМО ПОЧАТКОВИЙ СТАН (при завантаженні з Notion) ✨
+        initialTaskState.current = { step: savedStep, seconds: savedSeconds };
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // 2. Оновлюємо функцію виходу до списку
-  const resetToMain = async () => {
+const resetToMain = () => {
+    // 1. Миттєво ховаємо таймер
+    setIsTimerOpen(false);
+
     if (activeTaskId) {
-      try {
-        // Зберігаємо прогрес у хмару, але НЕ видаляємо його з локальної пам'яті ✨
-        await updateTaskProgress(activeTaskId, currentStepIndex, seconds);
-      } catch (e) { console.error(e); }
+      // 2. ПЕРЕВІРЯЄМО ЧИ БУЛИ ЗМІНИ ✨
+      const hasChanged = 
+        currentStepIndex !== initialTaskState.current.step || 
+        seconds !== initialTaskState.current.seconds;
+
+      if (hasChanged) {
+        // Якщо зміни були - відправляємо в Notion
+        updateTaskProgress(activeTaskId, currentStepIndex, seconds)
+          .then(() => console.log("💾 Збережено: прогрес змінився"))
+          .catch((e) => console.error("Помилка збереження:", e));
+      } else {
+        // Якщо змін не було - просто ігноруємо
+        console.log("🙈 Змін не було, запит до Notion скасовано");
+      }
     }
-    // Просто закриваємо "вікно" таймера на мобільному
-    setIsTimerOpen(false); 
-    // МИ НЕ ВИДАЛЯЄМО activeTaskId ТА activeSteps! Все залишається в пам'яті
   };
 
   const { level, xpInLevel } = getLevelProgress(xp);
