@@ -3,7 +3,6 @@ const BASE_URL = "/api/notion?endpoint=";
 
 // --- ДОПОМІЖНІ ФУНКЦІЇ ---
 
-/** Універсальний запит до API для зменшення дублювання коду */
 const apiRequest = async (path, method = "GET", body = null) => {
   try {
     const options = {
@@ -23,7 +22,6 @@ const apiRequest = async (path, method = "GET", body = null) => {
   }
 };
 
-/** Отримання тексту з блоків сторінки (абзаци, списки) */
 const getBlocksContent = async (pageId) => {
   const data = await apiRequest(`/v1/blocks/${pageId}/children`);
   if (!data?.results) return [];
@@ -42,37 +40,39 @@ const getBlocksContent = async (pageId) => {
 
 // --- ОСНОВНІ ЕКСПОРТИ ---
 
-/** * 1. Отримання списку задач.
- * Оптимізовано: тепер вантажиться миттєво, бо не рахує час для всього списку одразу.
+/** * 1. Отримання списку задач з автоматичним підрахунком часу. ✨
+ * Повертаємо Promise.all, щоб рахувати час для кожної задачі паралельно.
  */
 export const fetchNotionTasks = async () => {
-  const data = await apiRequest(`/v1/databases/${DATABASE_ID}/query`, "POST", {
-    filter: { property: "🌸", checkbox: { equals: false } }, //
+  const data = await apiRequest(`/v1/databases/${DATABASE_ID}/query`, 'POST', {
+    filter: { property: "🌸", checkbox: { equals: false } }
   });
-
+  
   if (!data?.results) return [];
 
-  return data.results.map((page) => {
-    const titleProp = Object.values(page.properties).find(
-      (p) => p.type === "title",
-    );
+  // ✨ ВИПРАВЛЕНО: Тепер ми викликаємо fetchTaskTotalTime для кожної задачі!
+  return Promise.all(data.results.map(async (page) => {
+    const titleProp = Object.values(page.properties).find(p => p.type === 'title');
+    
+    // Запускаємо підрахунок хвилин
+    const totalTime = await fetchTaskTotalTime(page.id);
+
     return {
       id: page.id,
       text: titleProp?.title[0]?.plain_text || "Без назви",
       completed: page.properties["🌸"]?.checkbox || false,
-      savedStep: page.properties["Current Step"]?.number || 0, // Зберігаємо
-      savedSeconds: page.properties["Elapsed Seconds"]?.number || 0, // Зберігаємо
+      totalTime, // Передаємо підрахований час у UI
+      savedStep: page.properties["Current Step"]?.number || 0,
+      savedSeconds: page.properties["Elapsed Seconds"]?.number || 0
     };
-  });
+  }));
 };
 
-/** * 2. Отримання кроків задачі.
- * Виправлено: видаляє "1. ", "Крок 1:" та інші технічні знаки з тексту.
- */
+/** 2. Отримання кроків задачі (очищення тексту) */
 export const fetchTaskSteps = async (pageId) => {
   const texts = await getBlocksContent(pageId);
   const steps = [];
-  const timeRegex = /\((\d+)\s*хв\)/i; //
+  const timeRegex = /\((\d+)\s*хв\)/i;
 
   texts.forEach((text) => {
     const parts = text.split(/(?=\d+\.\s|\*\*Крок|Крок\s*\d+:|\n)/g);
@@ -80,9 +80,8 @@ export const fetchTaskSteps = async (pageId) => {
       const match = part.match(timeRegex);
       if (match) {
         let cleanText = part
-          .replace(timeRegex, "") // Видаляємо час
-          .replace(/[*#]/g, "") // Видаляємо символи форматування
-          // Видаляємо номерацію на початку: "1. ", "Крок 1:", "1)"
+          .replace(timeRegex, "")
+          .replace(/[*#]/g, "")
           .replace(/^\s*(?:Крок\s*\d+[:.]?\s*)?[\d.)\s*-]+/i, "")
           .trim();
 
@@ -99,28 +98,35 @@ export const fetchTaskSteps = async (pageId) => {
 export const fetchTaskTotalTime = async (pageId) => {
   const texts = await getBlocksContent(pageId);
   let total = 0;
-  const globalRegex = /\((\d+)\s*хв\)/gi;
+  
+  const totalTimeRegex = /Загальний\s+час[:\s-]+(\d+)/i; 
+  const stepsRegex = /\((\d+)\s*хв\)/gi;
 
-  texts.forEach((text) => {
-    let match;
-    while ((match = globalRegex.exec(text)) !== null) {
-      total += parseInt(match[1]);
+  texts.forEach(text => {
+    const mainMatch = text.match(totalTimeRegex);
+    if (mainMatch) {
+      total = parseInt(mainMatch[1]);
+    } else if (total === 0) {
+      let match;
+      while ((match = stepsRegex.exec(text)) !== null) {
+        total += parseInt(match[1]);
+      }
     }
   });
+  
+  console.log(`⏱️ Задача ${pageId}: знайдено ${total} хв`); 
   return total;
 };
 
-/** 4. Завершення задачі в Notion (стовпець 🌸) */
+// ... решта функцій (markTaskAsDone, addNotionTask, updateTaskProgress) залишаються без змін
 export const markTaskAsDone = async (pageId) =>
   apiRequest(`/v1/pages/${pageId}`, "PATCH", {
     properties: { "🌸": { checkbox: true } },
   });
 
-/** 5. Видалення задачі (архівування) */
 export const deleteNotionTask = async (taskId) =>
   apiRequest(`/v1/pages/${taskId}`, "PATCH", { archived: true });
 
-/** 6. Створення нової задачі з магічним чекбоксом 🪄 */
 export const addNotionTask = async (title) =>
   apiRequest("/v1/pages", "POST", {
     parent: { database_id: DATABASE_ID },
@@ -130,7 +136,6 @@ export const addNotionTask = async (title) =>
     },
   });
 
-/** Оновлює прогрес задачі в Notion для синхронізації між девайсами ✨ */
 export const updateTaskProgress = async (pageId, stepIndex, seconds) => {
   return apiRequest(`/v1/pages/${pageId}`, "PATCH", {
     properties: {

@@ -12,7 +12,6 @@ function TaskList({
   isGenerating,
   onSync,
   onDeleteTask,
-  taskTimes = {} 
 }) {
   return (
     <div className="w-full flex flex-col space-y-6 animate-in fade-in slide-in-from-right-8 duration-700">
@@ -75,14 +74,14 @@ function TaskList({
                   {task.text}
                 </span>
                 
-                {!task.completed && taskTimes[task.id] && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <Clock size={12} className="text-accentMuted" />
-                    <span className="text-[10px] font-black text-accentMuted uppercase tracking-widest">
-                      {taskTimes[task.id]} хв всього
-                    </span>
-                  </div>
-                )}
+{!task.completed && task.totalTime && (
+  <div className="flex items-center gap-1.5 mt-1">
+    <Clock size={12} className="text-accentMuted" />
+    <span className="text-[10px] font-black text-accentMuted uppercase tracking-widest">
+      {task.totalTime} хв всього
+    </span>
+  </div>
+)}
                 
               </div>
             </div>

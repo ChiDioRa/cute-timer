@@ -1,7 +1,6 @@
 // src/hooks/useTaskActions.js
 import { 
   fetchNotionTasks, 
-  fetchTaskSteps, 
   addNotionTask, 
   updateTaskProgress 
 } from '../services/notionService';
@@ -11,18 +10,27 @@ export function useTaskActions(state) {
   const { 
     tasks, setTasks, activeSteps, setActiveSteps, currentStepIndex, setCurrentStepIndex,
     setSeconds, setIsRunning, setIsSyncing, newTaskText, setNewTaskText, addXp, speak,
-    activeTaskId // 👈 Обов'язково додаємо сюди
+    activeTaskId, 
+    seconds // 👈 ДОДАНО: Тепер функція бачить час таймера!
   } = state;
 
-  const syncWithNotion = async () => {
-    setIsSyncing(true);
-    try { const nt = await fetchNotionTasks(); setTasks(nt || []); } finally { setIsSyncing(false); }
-  };
+  /** 1. Синхронізація (завантаження списку) */
+const syncWithNotion = async () => {
+  setIsSyncing(true);
+  try { 
+    const nt = await fetchNotionTasks(); // Тут іде запит, який тепер має повернути totalTime
+    setTasks(nt || []); 
+  } finally { 
+    setIsSyncing(false); 
+  }
+};
 
+  /** 2. Завершення квесту/кроку */
   const handleCompleteStep = async () => {
     if (currentStepIndex < activeSteps.length - 1) {
       const nextIndex = currentStepIndex + 1;
-      const bonus = getSpeedBonus(state.seconds, activeSteps[currentStepIndex]?.minutes);
+      // Використовуємо seconds для розрахунку бонусу
+      const bonus = getSpeedBonus(seconds, activeSteps[currentStepIndex]?.minutes);
       
       if (bonus > 0) speak(`Бонус швидкості: ${bonus} XP!`);
       addXp(GAME_CONFIG.STEP_XP + bonus);
@@ -30,12 +38,11 @@ export function useTaskActions(state) {
       setCurrentStepIndex(nextIndex);
       setSeconds(0);
 
-      // Синхронізація з Notion ✨
       if (activeTaskId) await updateTaskProgress(activeTaskId, nextIndex, 0);
     }
   };
 
-  // ✨ ДОДАЄМО SKIP (якого не вистачало)
+  /** 3. Пропуск квесту */
   const handleSkipStep = async () => {
     if (currentStepIndex < activeSteps.length - 1) {
       const nextIndex = currentStepIndex + 1;
@@ -45,7 +52,7 @@ export function useTaskActions(state) {
     }
   };
 
-  // ✨ ДОДАЄМО PREV
+  /** 4. Повернення назад */
   const handlePrevStep = async () => {
     if (currentStepIndex > 0) {
       const prevIndex = currentStepIndex - 1;
@@ -56,6 +63,7 @@ export function useTaskActions(state) {
     }
   };
 
+  /** 5. Додавання нової задачі */
   const handleAddTask = async (e) => {
     if (e) e.preventDefault();
     if (!newTaskText.trim()) return;
@@ -64,15 +72,40 @@ export function useTaskActions(state) {
       await addNotionTask(newTaskText);
       setNewTaskText('');
       addXp(GAME_CONFIG.PLANNING_XP);
-      await syncWithNotion();
+      const nt = await fetchNotionTasks();
+      setTasks(nt || []);
     } finally { setIsSyncing(false); }
   };
 
-  return { 
-    syncWithNotion, 
+  /** ✨ 6. РУЧНА СИНХРОНІЗАЦІЯ (Save + Refresh) ✨ */
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      // Тепер seconds визначено, і помилки не буде!
+      if (activeTaskId) {
+        await updateTaskProgress(activeTaskId, currentStepIndex, seconds);
+        console.log("💾 Прогрес збережено в Notion");
+      }
+
+if (freshTasks && freshTasks.length > 0) {
+        setTasks(freshTasks); // Оновлюємо список лише тоді, коли дані вже прийшли
+        // localStorage оновиться автоматично завдяки useEffect у useTimerLogic
+      }
+      
+      speak("Дані оновлено!");
+    } catch (error) {
+      console.error("Помилка синхронізації:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  return {
     handleCompleteStep, 
-    handleSkipStep, // 👈 Тепер ця функція існує!
+    handleSkipStep, 
     handlePrevStep,
-    handleAddTask 
+    handleAddTask,
+    handleManualSync, // Для виклику як handleManualSync
+    syncWithNotion: handleManualSync // Для виклику через стару назву в Timer.jsx
   };
 }
