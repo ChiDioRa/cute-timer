@@ -33,7 +33,7 @@ function Timer({
     const nextState = !isRunning;
     setIsRunning(nextState);
     if (nextState) {
-      speak(seconds === 0 ? `Починаємо: ${currentStep?.text}` : "Продовжуємо роботу");
+      speak(seconds === 0 ? `Починаємо: ${currentStep?.text}` : "Продовжуємо");
     } else {
       speak("Пауза");
     }
