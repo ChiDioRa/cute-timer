@@ -1,16 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'; // Додано useMemo в імпорт
 import { useVoice } from './useVoice'; 
 import { useTaskActions } from './useTaskActions';
-// 1. ПЕРЕВІР ЦЕЙ ІМПОРТ (він обов'язковий для роботи "Назад")
 import { fetchTaskSteps, updateTaskProgress } from '../services/notionService';
 import { getLevelProgress, getFinishTime, GAME_CONFIG } from '../utils/logicHelpers';
 
 export function useTimerLogic() {
-  // --- СТАТИЧНА ЧЕРГА ХУКІВ (13 useState) ---
+  // --- 1. УСІ СТАНИ (Hooks) ---
   const [xp, setXp] = useState(() => parseInt(localStorage.getItem('timer_user_xp') || '0'));
   const [energy, setEnergy] = useState(() => parseInt(localStorage.getItem('timer_user_energy') || '100'));
   const [tasks, setTasks] = useState(() => JSON.parse(localStorage.getItem('timer_tasks') || '[]'));
-  const [taskTimes, setTaskTimes] = useState(() => JSON.parse(localStorage.getItem('timer_task_times') || '{}'));
   const [activeTaskId, setActiveTaskId] = useState(() => localStorage.getItem('timer_active_id') || null);
   const [activeSteps, setActiveSteps] = useState(() => JSON.parse(localStorage.getItem('timer_active_steps') || '[]'));
   const [currentStepIndex, setCurrentStepIndex] = useState(() => parseInt(localStorage.getItem('timer_step_index') || '0'));
@@ -20,11 +18,35 @@ export function useTimerLogic() {
   const [isRunning, setIsRunning] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [stepsCache, setStepsCache] = useState(() => JSON.parse(localStorage.getItem('timer_steps_cache') || '{}'));
+  const [isTimerOpen, setIsTimerOpen] = useState(false);
+
+  // Режими відображення списку
+  const [filterMode, setFilterMode] = useState('all'); 
+  const [sortMode, setSortMode] = useState('newest');
 
   const wakeLockRef = useRef(null); 
-  const pendingCompletions = useRef(new Map());
-
   const { speak } = useVoice(); 
+
+  // --- 2. ОБРОБКА СПИСКУ ЗАДАЧ (Фільтр + Сортування) ✨ ---
+  // Ми винесли це з функцій на верхній рівень
+const processedTasks = useMemo(() => {
+  let result = [...tasks];
+
+  if (sortMode === 'shortest') {
+    // ⚡ Режим "Швидкі": за часом (0 хв — у кінець)
+    result.sort((a, b) => {
+      const timeA = a.totalTime || 999;
+      const timeB = b.totalTime || 999;
+      return timeA - timeB;
+    });
+  } else {
+    // 🆕 Режим "Нові": за датою створення (якщо вона є)
+    result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
+  return result;
+}, [tasks, sortMode]);
+
   const addXp = useCallback((amount) => {
     setXp(prev => {
       const newXp = prev + amount;
@@ -39,7 +61,7 @@ export function useTimerLogic() {
     seconds, activeTaskId
   });
 
-  // --- ЕФЕКТИ АВТОЗБЕРЕЖЕННЯ ---
+  // --- 3. ЕФЕКТИ АВТОЗБЕРЕЖЕННЯ ---
   useEffect(() => {
     localStorage.setItem('timer_tasks', JSON.stringify(tasks));
     localStorage.setItem('timer_active_steps', JSON.stringify(activeSteps));
@@ -50,7 +72,12 @@ export function useTimerLogic() {
     else localStorage.removeItem('timer_active_id');
   }, [tasks, activeSteps, stepsCache, seconds, currentStepIndex, activeTaskId]);
 
-  // Секундомір
+useEffect(() => {
+  if (activeTaskId) {
+    setIsTimerOpen(true);
+  }
+}, [activeTaskId]);
+
   useEffect(() => {
     let interval = null;
     if (isRunning) {
@@ -62,25 +89,6 @@ export function useTimerLogic() {
     return () => clearInterval(interval);
   }, [isRunning, addXp]);
 
-  // --- ЛОГІКА НАВІГАЦІЇ ✨ ---
-
-  /** 🚪 РОЗУМНИЙ ВИХІД: Зберегти в хмару та згорнути */
-  const resetToMain = async () => {
-    if (activeTaskId) {
-      try {
-        // Рятуємо прогрес перед виходом
-        await updateTaskProgress(activeTaskId, currentStepIndex, seconds);
-        console.log("💾 Прогрес автоматично збережено");
-      } catch (e) {
-        console.error("Помилка автозбереження:", e);
-      }
-    }
-    // Просто ховаємо задачу, але НЕ видаляємо її з пам'яті (seconds залишаються)
-    setActiveTaskId(null);
-    setIsRunning(false);
-  };
-
-  /** 🔄 ПОВНЕ СКИНУТИ: Для іконки Reset */
   const handleResetTimer = () => {
     if (window.confirm("Скинути час цього кроку?")) {
       setSeconds(0);
@@ -88,41 +96,68 @@ export function useTimerLogic() {
     }
   };
 
-  const handleTaskClick = async (id) => {
-    setActiveTaskId(id);
-    const targetTask = tasks.find(t => t.id === id);
-    
-    if (stepsCache[id]) {
-      setActiveSteps(stepsCache[id]);
+const handleTaskClick = async (id) => {
+  // 1. ВІДКРИВАЄМО ВІКНО ТАЙМЕРА НА МОБІЛЬНОМУ ✨
+  setIsTimerOpen(true); 
+
+  // 2. Якщо ми натиснули на ту саму задачу, що вже запущена — 
+  // просто залишаємо все як є (таймер продовжить іти)
+  if (activeTaskId === id) return;
+
+  // 3. Якщо це нова задача — перемикаємо ID та завантажуємо кроки
+  setActiveTaskId(id);
+  const targetTask = tasks.find(t => t.id === id);
+  
+  if (stepsCache[id]) {
+    setActiveSteps(stepsCache[id]);
+    setCurrentStepIndex(targetTask?.savedStep || 0);
+    setSeconds(targetTask?.savedSeconds || 0);
+    return;
+  }
+
+  setIsSyncing(true);
+  try {
+    const steps = await fetchTaskSteps(id); 
+    if (steps?.length > 0) {
+      setStepsCache(prev => ({ ...prev, [id]: steps }));
+      setActiveSteps(steps);
       setCurrentStepIndex(targetTask?.savedStep || 0);
       setSeconds(targetTask?.savedSeconds || 0);
-      return;
     }
+  } finally {
+    setIsSyncing(false);
+  }
+};
 
-    setIsSyncing(true);
-    try {
-      const steps = await fetchTaskSteps(id); 
-      if (steps?.length > 0) {
-        setStepsCache(prev => ({ ...prev, [id]: steps }));
-        setActiveSteps(steps);
-        setCurrentStepIndex(targetTask?.savedStep || 0);
-        setSeconds(targetTask?.savedSeconds || 0);
-      }
-    } finally {
-      setIsSyncing(false);
+  // 2. Оновлюємо функцію виходу до списку
+  const resetToMain = async () => {
+    if (activeTaskId) {
+      try {
+        // Зберігаємо прогрес у хмару, але НЕ видаляємо його з локальної пам'яті ✨
+        await updateTaskProgress(activeTaskId, currentStepIndex, seconds);
+      } catch (e) { console.error(e); }
     }
+    // Просто закриваємо "вікно" таймера на мобільному
+    setIsTimerOpen(false); 
+    // МИ НЕ ВИДАЛЯЄМО activeTaskId ТА activeSteps! Все залишається в пам'яті
   };
 
   const { level, xpInLevel } = getLevelProgress(xp);
   const finishTime = getFinishTime(activeSteps, currentStepIndex);
 
+  // --- 5. ПОВЕРНЕННЯ ---
   return {
     ...actions,
     xp, level, xpInLevel, energy, setEnergy,
     seconds, isRunning, setIsRunning, setSeconds,
-    activeTaskId, tasks, activeSteps, currentStepIndex,
+    activeTaskId, 
+    tasks: processedTasks, // ТЕПЕР ПОВЕРТАЄМО ОБРОБЛЕНИЙ СПИСОК ✨
+    activeSteps, currentStepIndex,
     isSyncing, isGenerating, newTaskText, setNewTaskText,
     handleTaskClick, resetToMain, handleResetTimer, finishTime, speak,
+    filterMode, setFilterMode, // Для кнопки фільтра
+    sortMode, setSortMode,     // Для кнопки сортування
+      isTimerOpen, setIsTimerOpen,
     remainingStepsCount: activeSteps.length > 0 ? activeSteps.length - (currentStepIndex + 1) : 0
   };
 }

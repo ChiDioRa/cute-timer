@@ -43,25 +43,32 @@ const getBlocksContent = async (pageId) => {
 /** * 1. Отримання списку задач з автоматичним підрахунком часу. ✨
  * Повертаємо Promise.all, щоб рахувати час для кожної задачі паралельно.
  */
+
 export const fetchNotionTasks = async () => {
+  // Додаємо сортування прямо в запит до API ✨
   const data = await apiRequest(`/v1/databases/${DATABASE_ID}/query`, 'POST', {
-    filter: { property: "🌸", checkbox: { equals: false } }
+    filter: { property: "🌸", checkbox: { equals: false } },
+    sorts: [
+      {
+        timestamp: "created_time",
+        direction: "descending" // 👈 Найновіші будуть зверху
+      }
+    ]
   });
   
   if (!data?.results) return [];
 
-  // ✨ ВИПРАВЛЕНО: Тепер ми викликаємо fetchTaskTotalTime для кожної задачі!
   return Promise.all(data.results.map(async (page) => {
     const titleProp = Object.values(page.properties).find(p => p.type === 'title');
-    
-    // Запускаємо підрахунок хвилин
     const totalTime = await fetchTaskTotalTime(page.id);
 
     return {
       id: page.id,
       text: titleProp?.title[0]?.plain_text || "Без назви",
       completed: page.properties["🌸"]?.checkbox || false,
-      totalTime, // Передаємо підрахований час у UI
+      totalTime, 
+      // Додаємо дату створення в об'єкт задачі для фронтенд-логіки
+      createdAt: page.created_time, 
       savedStep: page.properties["Current Step"]?.number || 0,
       savedSeconds: page.properties["Elapsed Seconds"]?.number || 0
     };
