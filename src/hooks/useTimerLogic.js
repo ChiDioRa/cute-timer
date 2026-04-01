@@ -2,13 +2,28 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   fetchNotionTasks, 
   fetchTaskSteps, 
-  fetchTaskTotalTime, 
   markTaskAsDone,
   deleteNotionTask, 
   addNotionTask 
 } from '../services/notionService';
 
 export function useTimerLogic() {
+  // 1. ГЕЙМІФІКАЦІЯ
+  const [xp, setXp] = useState(() => parseInt(localStorage.getItem('timer_user_xp') || '0'));
+  const [energy, setEnergy] = useState(() => parseInt(localStorage.getItem('timer_user_energy') || '100'));
+  
+  const level = Math.floor(xp / 500) + 1;
+  const xpInLevel = xp % 500;
+
+  const addXp = (amount) => {
+    setXp(prev => {
+      const newXp = prev + amount;
+      localStorage.setItem('timer_user_xp', newXp.toString());
+      return newXp;
+    });
+  };
+
+  // 2. СТАН ЗАДАЧ ТА СЕКУНДОМІРА
   const [tasks, setTasks] = useState(() => JSON.parse(localStorage.getItem('timer_tasks') || '[]'));
   const [taskTimes, setTaskTimes] = useState(() => JSON.parse(localStorage.getItem('timer_task_times') || '{}'));
   const [activeTaskId, setActiveTaskId] = useState(() => localStorage.getItem('timer_active_id') || null);
@@ -16,64 +31,49 @@ export function useTimerLogic() {
   const [currentStepIndex, setCurrentStepIndex] = useState(() => parseInt(localStorage.getItem('timer_step_index') || '0'));
   const [newTaskText, setNewTaskText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-
   const [seconds, setSeconds] = useState(() => {
     const saved = localStorage.getItem('timer_seconds');
-    return saved ? parseInt(saved) : 1500;
+    return saved ? parseInt(saved) : 0;
   });
   
   const [isRunning, setIsRunning] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  const halfwayAudioRef = useRef(null);
-  const warningAudioRef = useRef(null);
-  const finishAudioRef = useRef(null);
   const wakeLockRef = useRef(null); 
   const pendingCompletions = useRef(new Map()); 
 
-  // ✨ ОЗВУЧКА (З компромісним запобіжником) ✨
   const speak = (text) => {
-    if (!text) return;
-    console.log("Озвучуємо текст:", text);
+  if (!text) return;
+  window.speechSynthesis.cancel(); // Зупиняємо попередню чергу
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'uk-UA';
+  utterance.rate = 1.1; // Трохи швидше для жвавості
+  utterance.pitch = 1.2; // Трохи вище для "милості"
 
-    window.speechSynthesis.cancel();
+  const playVoice = () => {
+    const voices = window.speechSynthesis.getVoices();
+    // Шукаємо спочатку Google Українську, потім будь-яку українську
+    let voice = voices.find(v => v.name.includes('Google українська') || v.lang === 'uk-UA');
     
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'uk-UA';
-
-    const playVoice = () => {
-      const voices = window.speechSynthesis.getVoices();
-      
-      let bestVoice = voices.find(v => v.name.includes('Google українська') || (v.name.includes('Google') && v.lang === 'uk-UA'));
-
-      if (!bestVoice) {
-        bestVoice = voices.find(v => v.lang === 'uk-UA' || v.lang === 'uk_UA');
-      }
-
-      if (!bestVoice) {
-        bestVoice = voices.find(v => v.name === 'Google русский' || v.lang === 'ru-RU');
-      }
-
-      if (!bestVoice) {
-        bestVoice = voices.find(v => v.name.includes('English') || v.lang.startsWith('en'));
-      }
-
-      if (bestVoice) {
-        utterance.voice = bestVoice;
-      }
-
-      window.speechSynthesis.speak(utterance);
-    };
-
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.addEventListener('voiceschanged', playVoice, { once: true });
+    if (voice) {
+      utterance.voice = voice;
     } else {
-      playVoice();
+      // Якщо української немає, шукаємо англійську як "міжнародну" або залишаємо дефолт
+      utterance.lang = 'ru-RU'; // Спроба російської як запасного варіанту
     }
+    
+    window.speechSynthesis.speak(utterance);
   };
 
+  if (window.speechSynthesis.getVoices().length === 0) {
+    window.speechSynthesis.onvoiceschanged = playVoice;
+  } else {
+    playVoice();
+  }
+};
+
+  // 4. АВТОЗБЕРЕЖЕННЯ
   useEffect(() => { localStorage.setItem('timer_tasks', JSON.stringify(tasks)); }, [tasks]);
-  useEffect(() => { localStorage.setItem('timer_task_times', JSON.stringify(taskTimes)); }, [taskTimes]);
   useEffect(() => { localStorage.setItem('timer_active_steps', JSON.stringify(activeSteps)); }, [activeSteps]);
   useEffect(() => { localStorage.setItem('timer_step_index', currentStepIndex.toString()); }, [currentStepIndex]);
   useEffect(() => { localStorage.setItem('timer_seconds', seconds.toString()); }, [seconds]);
@@ -82,116 +82,92 @@ export function useTimerLogic() {
     else localStorage.removeItem('timer_active_id');
   }, [activeTaskId]);
 
-  useEffect(() => {
-    const requestWakeLock = async () => {
-      try {
-        if ('wakeLock' in navigator && isRunning) {
-          wakeLockRef.current = await navigator.wakeLock.request('screen');
-        }
-      } catch (err) {}
-    };
-
-    const releaseWakeLock = async () => {
-      if (wakeLockRef.current !== null) {
-        await wakeLockRef.current.release();
-        wakeLockRef.current = null;
-      }
-    };
-
-    if (isRunning) requestWakeLock();
-    else releaseWakeLock();
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isRunning) requestWakeLock();
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      releaseWakeLock();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isRunning]);
-
-  // ✨ 4. ТАЙМЕР (ТЕПЕР ІЗ ПОЛОВИНОЮ ЧАСУ І БЕЗ БУМУ) ✨
+  // 5. ЛОГІКА СЕКУНДОМІРА + XP
   useEffect(() => {
     let interval = null;
     if (isRunning) {
       interval = setInterval(() => {
         setSeconds((prev) => {
-          const nextValue = prev - 1;
-          
-          // Визначаємо загальний час поточного кроку
-          const currentStep = activeSteps[currentStepIndex];
-          const totalSeconds = currentStep ? currentStep.minutes * 60 : 1500;
-          const halfway = Math.floor(totalSeconds / 2);
-
-          // Озвучуємо половину часу (тільки якщо задача довша за 1 хв, щоб не спамило)
-          if (nextValue === halfway && totalSeconds > 60) {
-            speak("Половина часу минула");
+          const nextValue = prev + 1;
+          addXp(1); // +1 XP щосекунди
+          if (nextValue > 0 && nextValue % 300 === 0) {
+            speak(`Ти у фокусі вже ${nextValue / 60} хвилин.`);
           }
-
-          if (nextValue === 30) {
-            speak("Залишилось тридцять секунд");
-          }
-
-          if (nextValue === 0) {
-            // Аудіо "Бум" більше не викликається
-            speak("Крок завершено");
-          }
-          
           return nextValue;
         });
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isRunning, activeSteps, currentStepIndex]); // Додали currentStepIndex
+  }, [isRunning]);
 
+  // 6. КЕРУВАННЯ КРОКАМИ
   const handleTaskClick = async (id) => {
     setActiveTaskId(id);
     const steps = await fetchTaskSteps(id);
     if (steps?.length > 0) {
       setActiveSteps(steps);
       setCurrentStepIndex(0);
-      setSeconds(steps[0].minutes * 60);
+      setSeconds(0);
       setIsRunning(false); 
     }
   };
 
-// НАСТУПНИЙ КРОК
-  const handleNextStep = () => {
+  const handleCompleteStep = () => {
+    if (currentStepIndex < activeSteps.length - 1) {
+      const currentStep = activeSteps[currentStepIndex];
+      const estimatedSeconds = (currentStep?.minutes || 5) * 60;
+      let baseStepXp = 50;
+      let speedBonus = 0;
+
+      if (seconds < estimatedSeconds) {
+        const savedMinutes = Math.floor((estimatedSeconds - seconds) / 60);
+        speedBonus = savedMinutes * 10;
+        if (speedBonus > 0) speak(`Чудова швидкість! Бонус ${speedBonus} досвіду.`);
+      }
+
+      addXp(baseStepXp + speedBonus);
+      const nextIndex = currentStepIndex + 1;
+      setCurrentStepIndex(nextIndex);
+      setSeconds(0);
+      if (isRunning) speak(`Наступний крок: ${activeSteps[nextIndex].text}`);
+    }
+  };
+
+  const handleSkipStep = () => {
     if (currentStepIndex < activeSteps.length - 1) {
       const nextIndex = currentStepIndex + 1;
       setCurrentStepIndex(nextIndex);
-      setSeconds(activeSteps[nextIndex].minutes * 60);
-      
-      // ✨ МАГІЯ ТУТ: Озвучуємо ТІЛЬКИ якщо таймер зараз активно йде (натиснуто Play)
-      if (isRunning) {
-        speak(`Наступний крок: ${activeSteps[nextIndex].text}`);
-      }
+      setSeconds(0);
+      if (isRunning) speak(`Пропущено. Наступний крок: ${activeSteps[nextIndex].text}`);
     }
   };
 
-// ФУНКЦІЯ ПЕРЕХОДУ НА ПОПЕРЕДНІЙ КРОК
   const handlePrevStep = () => {
     if (currentStepIndex > 0) {
-      const prevIndex = currentStepIndex - 1;
-      setCurrentStepIndex(prevIndex);
-      setSeconds(activeSteps[prevIndex].minutes * 60); 
-      
-      // ✨ МАГІЯ ТУТ: Озвучуємо ТІЛЬКИ якщо таймер зараз активно йде
-      if (isRunning) {
-        speak(`Повертаємось до кроку: ${activeSteps[prevIndex].text}`);
-      }
-      setIsRunning(false); // Ставимо на паузу після переходу
+      setCurrentStepIndex(prev => prev - 1);
+      setSeconds(0); 
+      setIsRunning(false); 
     }
   };
 
-  const resetToMain = () => {
-    setActiveTaskId(null);
-    setActiveSteps([]);
-    setCurrentStepIndex(0);
-    setIsRunning(false);
-    setSeconds(1500); 
+  // 7. СИНХРОНІЗАЦІЯ ТА Notion
+  const toggleTaskStatus = (taskId) => {
+    const targetTask = tasks.find(t => t.id === taskId);
+    if (!targetTask) return;
+    const isNowCompleted = !targetTask.completed;
+    if (isNowCompleted) addXp(200);
+
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: isNowCompleted } : t));
+
+    if (isNowCompleted) {
+      const timeoutId = setTimeout(async () => {
+        try {
+          await markTaskAsDone(taskId);
+          await syncWithNotion();
+        } catch (e) {}
+      }, 10000); 
+      pendingCompletions.current.set(taskId, timeoutId);
+    }
   };
 
   const syncWithNotion = async () => {
@@ -199,106 +175,30 @@ export function useTimerLogic() {
     try {
       const notionTasks = await fetchNotionTasks();
       setTasks(notionTasks || []);
-      
-      const newTimes = {};
-      (notionTasks || []).forEach(t => {
-        if (t.totalTime) newTimes[t.id] = t.totalTime;
-      });
-      
-      setTaskTimes(prev => {
-        const merged = { ...prev, ...newTimes };
-        return merged;
-      });
-
     } finally { setIsSyncing(false); }
   };
 
-  const toggleTaskStatus = (taskId) => {
-    const targetTask = tasks.find(t => t.id === taskId);
-    if (!targetTask) return;
-
-    const isNowCompleted = !targetTask.completed;
-
-    setTasks(prev => prev.map(t => 
-      t.id === taskId ? { ...t, completed: isNowCompleted } : t
-    ));
-
-    if (isNowCompleted) {
-      const timeoutId = setTimeout(async () => {
-        try {
-          await markTaskAsDone(taskId);
-          await syncWithNotion();
-        } catch (error) {
-          setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: false } : t));
-        }
-        pendingCompletions.current.delete(taskId);
-      }, 10000); 
-
-      pendingCompletions.current.set(taskId, timeoutId);
-    } else {
-      if (pendingCompletions.current.has(taskId)) {
-        clearTimeout(pendingCompletions.current.get(taskId));
-        pendingCompletions.current.delete(taskId);
-      }
-    }
+  const resetToMain = () => {
+    setActiveTaskId(null); setActiveSteps([]); setCurrentStepIndex(0); setIsRunning(false); setSeconds(0); 
   };
 
-  const handleDeleteTask = async (taskId) => {
-    const taskToDelete = tasks.find(t => t.id === taskId);
-    const taskName = taskToDelete ? taskToDelete.text : "цю задачу";
-
-    if (!window.confirm(`Видалити "${taskName}"? 🌸`)) return;
-
-    try {
-      setTasks(prev => prev.filter(t => t.id !== taskId));
-      if (activeTaskId === taskId) resetToMain();
-      await deleteNotionTask(taskId);
-    } catch (error) {
-      await syncWithNotion();
-    }
-  };
-
-  const handleAddTask = async (e) => {
-    if (e) e.preventDefault();
-    if (!newTaskText.trim()) return;
-
-    setIsSyncing(true);
-    try {
-      await addNotionTask(newTaskText); 
-      setNewTaskText('');              
-      await syncWithNotion();          
-    } catch (error) {
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const handleGenerateSteps = async () => {
-    const webhookUrl = import.meta.env.VITE_GENERATE_STEPS_WEBHOOK;
-    if (!webhookUrl) return;
-
-    setIsGenerating(true); 
-    
-    try {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'generate_steps' }), 
-      });
-    } catch (error) {
-    } finally {
-      setTimeout(async () => {
-        await syncWithNotion();
-        setIsGenerating(false); 
-      }, 2000);
-    }
+  const calculateFinishTime = () => {
+    if (!activeSteps || activeSteps.length === 0) return "--:--";
+    const remainingSteps = activeSteps.slice(currentStepIndex);
+    const totalRemainingMinutes = remainingSteps.reduce((acc, step) => acc + (step.minutes || 0), 0);
+    const finishDate = new Date(new Date().getTime() + totalRemainingMinutes * 60000);
+    return finishDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return {
     seconds, isRunning, setIsRunning, setSeconds,
     activeTaskId, tasks, activeSteps, currentStepIndex,
-    isSyncing, taskTimes, handleDeleteTask,
-    halfwayAudioRef, warningAudioRef, finishAudioRef,
-    syncWithNotion, handleTaskClick, handleNextStep, newTaskText, setNewTaskText, handleAddTask, 
-    addNotionTask, handlePrevStep, speak, markTaskAsDone, resetToMain, toggleTaskStatus, isGenerating, handleGenerateSteps
+    isSyncing, taskTimes, xp, level, xpInLevel, energy, setEnergy,
+    syncWithNotion, handleTaskClick, resetToMain, toggleTaskStatus,
+    handleCompleteStep, handleSkipStep, handlePrevStep, speak,
+    finishTime: calculateFinishTime(),
+    remainingStepsCount: activeSteps.length > 0 ? activeSteps.length - (currentStepIndex + 1) : 0,
+    handleDeleteTask: () => {}, handleAddTask: () => {}, handleGenerateSteps: () => {}, // додай якщо треба
+    newTaskText, setNewTaskText, isGenerating
   };
 }

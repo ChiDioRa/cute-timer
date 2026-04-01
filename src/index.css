@@ -14,21 +14,163 @@
   
   --shadow-theme-sm: 0 4px 6px -1px var(--shadow-color);
   --shadow-theme-lg: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -4px var(--shadow-color);
+
+  --color-xpBar: var(--accent);
+  --color-energyLow: #fb7185; /* rose-400 */
+  --color-energyHigh: #34d399; /* emerald-400 */
+}
+
+@keyframes floatUp {
+  0% { opacity: 0; transform: translateY(0); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+
+.animate-xp-float {
+  animation: floatUp 2s ease-out forwards;
+}
+
+/* М'яке пульсуюче сяйво для картки */
+@keyframes breathing-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px var(--glow-color), 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+  }
+  50% { 
+    /* Збільшуємо розмиття сяйва на піку анімації */
+    box-shadow: 0 0 45px var(--glow-color), 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+  }
+}
+
+.animate-glow {
+  animation: breathing-glow 3s infinite ease-in-out;
+}
+
+/* Анімація для зірочок, що вилітають */
+@keyframes sparkle-float {
+  0% { transform: translate(0, 0) scale(0); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.2); opacity: 0; }
+}
+
+.animate-sparkle {
+  animation: sparkle-float 2s infinite ease-out;
+}
+
+/* Хитання котика */
+@keyframes cat-wobble {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+
+.animate-cat {
+  animation: cat-wobble 2s infinite ease-in-out;
+}
+
+.font-timer {
+  /* Tabular-nums фіксує ширину цифр, щоб таймер не "дьоргався" */
+  font-variant-numeric: tabular-nums;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Анімація пелюстки для Сакури */
+@keyframes petal-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.6; }
+  100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(45deg); opacity: 0; }
+}
+
+.animate-petal {
+  animation: petal-fall 4s infinite ease-in-out;
+}
+
+/* Більше мерехтіння для Міднайту */
+@keyframes star-pulse {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.animate-star-slow {
+  animation: star-pulse 4s infinite ease-in-out;
+}
+
+/* Ефект мерехтіння */
+@keyframes twinkling {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.animate-twinkle {
+  animation: twinkling 3s infinite ease-in-out;
+}
+
+/* 🍵 Ефект для Матчі (листочки, що плавають) */
+@keyframes leaf-drift {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.6; }
+  100% { transform: translate(var(--tw-translate-x), 100px) rotate(15deg); opacity: 0; }
+}
+
+.animate-leaf {
+  animation: leaf-drift 6s infinite ease-in-out;
+}
+
+/* ✨ Посилене мерехтіння для Міднайту */
+@keyframes star-bright {
+  0%, 100% { opacity: 0.2; transform: scale(0.7) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.3) rotate(180deg); filter: blur(1px); }
+}
+
+.animate-star-bright {
+  animation: star-bright 3s infinite ease-in-out;
+}
+
+@keyframes heart-pulse {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.3); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.15); }
+  60% { transform: scale(1); }
+}
+
+.animate-heart-pulse {
+  animation: heart-pulse 1.2s infinite ease-in-out;
+}
+
+@keyframes heart-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-heart-float {
+  display: inline-block;
+  animation: heart-float 3s infinite ease-in-out;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
 }
 
 /* 🌸 САКУРА ТЕМА (за замовчуванням) */
 :root, [data-theme="sakura"] {
   --app-bg: #fff1f7;            
-  --app-text: #9d174d;         
+  --app-text: #aa215f;         
   --container-bg: rgba(255, 255, 255, 0.8); 
   --container-border: #fce7f3;  
   --accent: #f472b6;       
   --accent-hover: #ec4899; 
   --accent-text: #ffffff;       
   --active-task-bg: #fff1f2; 
-  --accent-muted: #fabfe0; 
+  --accent-muted: #eb90c3; 
   --timer-ring: #fce7f3;   
-  --shadow-color: rgba(0, 0, 0, 0.1); 
+--shadow-color: rgba(255, 182, 193, 0.3); /* Ніжно-рожева тінь */
+  --glow-color: rgba(255, 105, 180, 0.5); /* Рожеве сяйво */
 
   /* Ніжно-червоний для сакури */
   --overtime-bg: rgba(255, 228, 230, 0.3); /* rose-50/30 */
@@ -39,41 +181,44 @@
 /* 🌙 МІДНАЙТ ТЕМА */
 [data-theme="midnight"] {
   --app-bg: #0f1021;            
-  --app-text: #f8fafc;          
+  --app-text: #ff6bda;          
   --container-bg: rgba(30, 41, 59, 0.8);      
   --container-border: #334155;                
-  --accent: #c026d3;       
+  --accent: #de55f0;       
   --accent-hover: #d946ef; 
-  --accent-text: #ffffff;
+  --accent-text: #fff8fe;
   --active-task-bg: rgba(192, 38, 211, 0.1);    
-  --accent-muted: #e879f9;      
+  --accent-muted: #eacfee;      
   --timer-ring: rgba(192, 38, 211, 0.2);
-  --shadow-color: rgba(192, 38, 211, 0.15); 
+--shadow-color: rgba(139, 92, 246, 0.2); /* Фіолетова "космічна" тінь */
 
   /* Магічний неоново-червоний для міднайту */
   --overtime-bg: rgba(225, 29, 72, 0.1);   /* rose-600/10 */
   --overtime-ring: rgba(225, 29, 72, 0.4); /* rose-600/40 */
   --overtime-text: #fb7185;                /* rose-400 */
+
+  --glow-color: rgba(227, 83, 246, 0.4); /* Фіолетове сяйво */
 }
 
-/* 🍵 МАТЧА ТЕМА */
+/* 🍵 МАТЧА ТЕМА (Кремова та затишна) */
 [data-theme="matcha"] {
-  --app-bg: #ecfdf5;                  
-  --app-text: #064e3b;              
-  --container-bg: rgba(255, 255, 255, 0.8); 
-  --container-border: #d1fae5;  
-  --accent: #34d399;       
-  --accent-hover: #10b981; 
-  --accent-text: #ffffff;       
-  --active-task-bg: #ecfdf5; 
-  --accent-muted: #a7f3d0; 
-  --timer-ring: #d1fae5;
-  --shadow-color: rgba(0, 0, 0, 0.1); 
+  --app-bg: #fdfcf0;             /* Кремовий, як молочна пінка */
+  --app-text: #163020;           /* Глибокий темно-зелений */
+  --container-bg: rgba(255, 255, 255, 0.9);
+  --container-border: #e2f0e6;
+  --accent: #65a30d;             /* Колір справжнього матча-порошку */
+  --accent-hover: #4d7c0f;
+  --accent-text: #ffffff;
+  --active-task-bg: #f7fee7;     /* Світлий лайм */
+  --accent-muted: #a3e635;
+  --timer-ring: #d9f99d;
+--shadow-color: rgba(16, 185, 129, 0.15); /* М'яка зелена тінь */
+  --glow-color: rgba(101, 163, 13, 0.35); /* М’яке зелене сяйво */
 
-  /* Теплий помаранчево-кораловий для матчі, щоб пасував до зелені */
-  --overtime-bg: rgba(255, 237, 213, 0.4); /* orange-50/40 */
-  --overtime-ring: #fed7aa;                /* orange-200 */
-  --overtime-text: #ea580c;                /* orange-600 */
+  /* Теплий кораловий залишаємо для контрасту */
+  --overtime-bg: rgba(213, 254, 255, 0.4);
+  --overtime-ring: #fed7aa;
+  --overtime-text: #ea580c;
 }
 
 * {
