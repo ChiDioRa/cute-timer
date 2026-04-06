@@ -1,4 +1,3 @@
-// src/hooks/useTaskActions.js
 import { 
   fetchNotionTasks, 
   addNotionTask, 
@@ -11,34 +10,42 @@ export function useTaskActions(state) {
     tasks, setTasks, activeSteps, setActiveSteps, currentStepIndex, setCurrentStepIndex,
     setSeconds, setIsRunning, setIsSyncing, newTaskText, setNewTaskText, addXp, speak,
     activeTaskId, 
-    seconds // 👈 ДОДАНО: Тепер функція бачить час таймера!
+    seconds, taskTotals
   } = state;
 
   /** 1. Синхронізація (завантаження списку) */
-const syncWithNotion = async () => {
-  setIsSyncing(true);
-  try { 
-    const nt = await fetchNotionTasks(); // Тут іде запит, який тепер має повернути totalTime
-    setTasks(nt || []); 
-  } finally { 
-    setIsSyncing(false); 
-  }
-};
+  const syncWithNotion = async () => {
+    setIsSyncing(true);
+    try { 
+      const nt = await fetchNotionTasks(); 
+      setTasks(nt || []); 
+    } finally { 
+      setIsSyncing(false); 
+    }
+  };
 
   /** 2. Завершення квесту/кроку */
   const handleCompleteStep = async () => {
     if (currentStepIndex < activeSteps.length - 1) {
       const nextIndex = currentStepIndex + 1;
-      // Використовуємо seconds для розрахунку бонусу
       const bonus = getSpeedBonus(seconds, activeSteps[currentStepIndex]?.minutes);
       
-      if (bonus > 0) speak(`Бонус швидкості: ${bonus} XP!`);
+      // ✨ Формуємо спільну фразу для озвучки
+      let phrase = "Чудова робота! ";
+      if (bonus > 0) phrase += `Бонус швидкості ${bonus} XP! `;
+      phrase += `Наступний крок: ${activeSteps[nextIndex].text}`;
+      
+      speak(phrase);
+
       addXp(GAME_CONFIG.STEP_XP + bonus);
       
       setCurrentStepIndex(nextIndex);
       setSeconds(0);
 
-      if (activeTaskId) await updateTaskProgress(activeTaskId, nextIndex, 0);
+      if (activeTaskId) {
+        const totalSpentSeconds = taskTotals ? (taskTotals[activeTaskId] || 0) : 0;
+        await updateTaskProgress(activeTaskId, nextIndex, 0, totalSpentSeconds);
+      }
     }
   };
 
@@ -46,9 +53,17 @@ const syncWithNotion = async () => {
   const handleSkipStep = async () => {
     if (currentStepIndex < activeSteps.length - 1) {
       const nextIndex = currentStepIndex + 1;
+      
+      // ✨ Озвучуємо скіп і наступний крок
+      speak(`Крок пропущено. Наступний крок: ${activeSteps[nextIndex].text}`);
+
       setCurrentStepIndex(nextIndex);
       setSeconds(0);
-      if (activeTaskId) await updateTaskProgress(activeTaskId, nextIndex, 0);
+      
+      if (activeTaskId) {
+        const totalSpentSeconds = taskTotals ? (taskTotals[activeTaskId] || 0) : 0;
+        await updateTaskProgress(activeTaskId, nextIndex, 0, totalSpentSeconds);
+      }
     }
   };
 
@@ -59,7 +74,11 @@ const syncWithNotion = async () => {
       setCurrentStepIndex(prevIndex);
       setSeconds(0);
       setIsRunning(false);
-      if (activeTaskId) await updateTaskProgress(activeTaskId, prevIndex, 0);
+      
+      if (activeTaskId) {
+        const totalSpentSeconds = taskTotals ? (taskTotals[activeTaskId] || 0) : 0;
+        await updateTaskProgress(activeTaskId, prevIndex, 0, totalSpentSeconds);
+      }
     }
   };
 
@@ -81,16 +100,16 @@ const syncWithNotion = async () => {
   const handleManualSync = async () => {
     setIsSyncing(true);
     try {
-        const freshTasks = await fetchNotionTasks();
-      // Тепер seconds визначено, і помилки не буде!
+      const freshTasks = await fetchNotionTasks();
+      
       if (activeTaskId) {
-        await updateTaskProgress(activeTaskId, currentStepIndex, seconds);
+        const totalSpentSeconds = taskTotals ? (taskTotals[activeTaskId] || 0) : 0;
+        await updateTaskProgress(activeTaskId, currentStepIndex, seconds, totalSpentSeconds);
         console.log("💾 Прогрес збережено в Notion");
       }
 
-if (freshTasks && freshTasks.length > 0) {
-        setTasks(freshTasks); // Оновлюємо список лише тоді, коли дані вже прийшли
-        // localStorage оновиться автоматично завдяки useEffect у useTimerLogic
+      if (freshTasks && freshTasks.length > 0) {
+        setTasks(freshTasks);
       }
       
       speak("Дані оновлено!");
@@ -106,7 +125,7 @@ if (freshTasks && freshTasks.length > 0) {
     handleSkipStep, 
     handlePrevStep,
     handleAddTask,
-    handleManualSync, // Для виклику як handleManualSync
-    syncWithNotion: handleManualSync // Для виклику через стару назву в Timer.jsx
+    handleManualSync, 
+    syncWithNotion: handleManualSync 
   };
 }

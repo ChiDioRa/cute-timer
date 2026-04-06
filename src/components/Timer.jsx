@@ -64,11 +64,10 @@ function Timer({
 
   const triggerSuccess = () => {
     setIsSuccess(true);
-    speak("Чудова робота!");
     setTimeout(() => setIsSuccess(false), 1000);
   };
 
-  const formatTime = (s) => {
+  const formatTime = (s) => { 
     const mins = Math.floor(s / 60);
     const secs = s % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
@@ -327,7 +326,7 @@ function Timer({
           {isRunning ? <Pause size={32} fill="currentColor" strokeWidth={0} /> : <Play size={32} fill="currentColor" className="ml-1" strokeWidth={0} />}
         </button>
 
-        <button onClick={() => { handleSkipStep(); speak("Пропущено"); }} className="p-2 text-accentMuted/30 hover:text-accent transition-colors">
+<button onClick={handleSkipStep} className="p-2 text-accentMuted/30 hover:text-accent transition-colors">
           <FastForward size={22} />
         </button>
 

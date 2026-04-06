@@ -37,6 +37,7 @@ function App() {
         setEnergy={logic.setEnergy}
         theme={theme}
         setTheme={setTheme}
+        taskTotals={logic.taskTotals} // 👈 ДОДАЙ ОСЬ ЦЕЙ РЯДОК
       />
 
       {/* Відступ для візуального балансу */}
@@ -153,6 +154,7 @@ function App() {
             onGenerateSteps={logic.handleGenerateSteps}
             isGenerating={logic.isGenerating}
             onDeleteTask={logic.handleDeleteTask}
+            taskTotals={logic.taskTotals} // 👈 ДОДАЙ ЦЕЙ РЯДОК
           />
         </div>
       </div>

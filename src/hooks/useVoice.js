@@ -3,6 +3,10 @@ import { useCallback } from 'react';
 export function useVoice() {
   const speak = useCallback((text) => {
     if (!text) return;
+    
+    // ✨ ПОВЕРНУЛИ ПЕРЕРИВАННЯ ✨
+    // Тепер нова фраза миттєво перебиває стару.
+    // Це також забирає баг із подвійним "Чудова робота!"
     window.speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);

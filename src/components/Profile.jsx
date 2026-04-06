@@ -1,6 +1,10 @@
 import { Zap, Palette } from 'lucide-react';
 
-export default function Profile({ level, xpInLevel, energy, setEnergy, theme, setTheme }) {
+export default function Profile({ level, xpInLevel, energy, setEnergy, theme, setTheme, taskTotals = {} }) {
+
+  // ✨ Вираховуємо загальний час фокусу (сумуємо всі секунди з усіх задач)
+  const totalFocusSeconds = Object.values(taskTotals).reduce((sum, val) => sum + val, 0);
+  const totalMinutes = Math.floor(totalFocusSeconds / 60);
 
   const getEnergyColor = (val) => {
     if (val > 60) return 'bg-emerald-400 border-emerald-600 shadow-[0_0_12px_rgba(52,211,153,0.4)]';
@@ -10,8 +14,6 @@ export default function Profile({ level, xpInLevel, energy, setEnergy, theme, se
 
   return (
     <div className="w-full max-w-5xl mx-auto mb-12 px-4">
-      
-      {/* Головний контейнер: на ПК gap-6, на мобільному gap-3 */}
       <div className="flex flex-col lg:flex-row justify-center items-center gap-3 lg:gap-6">
         
         {/* КАРТКА 1: LVL ТА XP */}
@@ -33,14 +35,17 @@ export default function Profile({ level, xpInLevel, energy, setEnergy, theme, se
               />
             </div>
           </div>
+
+          {/* ✨ БЛОК СТАТИСТИКИ ЧАСУ ✨ */}
+          <div className="flex flex-col items-end shrink-0 ml-2">
+            <span className="text-[10px] font-black text-accent uppercase opacity-60 tracking-widest">Фокус</span>
+            <span className="text-sm font-bold opacity-80">{totalMinutes} хв</span>
+          </div>
         </div>
 
-        {/* ✨ МАГІЯ ТУТ: lg:contents змушує цю обгортку "зникнути" на ПК, 
-            роблячи Енергію та Скіни прямими сусідами LVL-картки ✨ */}
         <div className="w-full flex flex-row gap-3 lg:contents">
           
           {/* КАРТКА 2: ЕНЕРГІЯ */}
-          {/* Додали lg:flex-1, щоб на ПК вона тягнулася самостійно */}
           <div className="flex-[1.5] lg:flex-1 flex items-center justify-center gap-2 sm:gap-4 bg-containerBg/80 backdrop-blur-sm p-3 sm:p-4 lg:px-8 rounded-[28px] border border-containerBorder shadow-theme-sm">
             <Zap size={20} className={`${energy <= 20 ? 'text-rose-400' : 'text-amber-400'} fill-current shrink-0`} />
             <div className="flex gap-1.5 sm:gap-2">
@@ -59,7 +64,6 @@ export default function Profile({ level, xpInLevel, energy, setEnergy, theme, se
           </div>
 
           {/* КАРТКА 3: СКІНИ */}
-          {/* Додали lg:flex-none lg:w-fit, щоб на ПК вона мала свій акуратний розмір */}
           <div className="flex-1 lg:flex-none lg:w-fit flex items-center justify-center gap-2 sm:gap-4 bg-containerBg/80 backdrop-blur-sm p-3 sm:p-4 lg:px-8 rounded-[28px] border border-containerBorder shadow-theme-sm">
             <div className="hidden sm:flex flex-col items-start leading-none opacity-40">
               <span className="text-[8px] font-black uppercase tracking-[0.2em] text-accent">Skins</span>

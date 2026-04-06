@@ -40,18 +40,13 @@ const getBlocksContent = async (pageId) => {
 
 // --- ОСНОВНІ ЕКСПОРТИ ---
 
-/** * 1. Отримання списку задач з автоматичним підрахунком часу. ✨
- * Повертаємо Promise.all, щоб рахувати час для кожної задачі паралельно.
- */
-
 export const fetchNotionTasks = async () => {
-  // Додаємо сортування прямо в запит до API ✨
   const data = await apiRequest(`/v1/databases/${DATABASE_ID}/query`, 'POST', {
     filter: { property: "🌸", checkbox: { equals: false } },
     sorts: [
       {
         timestamp: "created_time",
-        direction: "descending" // 👈 Найновіші будуть зверху
+        direction: "descending"
       }
     ]
   });
@@ -67,7 +62,6 @@ export const fetchNotionTasks = async () => {
       text: titleProp?.title[0]?.plain_text || "Без назви",
       completed: page.properties["🌸"]?.checkbox || false,
       totalTime, 
-      // Додаємо дату створення в об'єкт задачі для фронтенд-логіки
       createdAt: page.created_time, 
       savedStep: page.properties["Current Step"]?.number || 0,
       savedSeconds: page.properties["Elapsed Seconds"]?.number || 0
@@ -75,7 +69,6 @@ export const fetchNotionTasks = async () => {
   }));
 };
 
-/** 2. Отримання кроків задачі (очищення тексту) */
 export const fetchTaskSteps = async (pageId) => {
   const texts = await getBlocksContent(pageId);
   const steps = [];
@@ -101,7 +94,6 @@ export const fetchTaskSteps = async (pageId) => {
   return steps;
 };
 
-/** 3. Підрахунок сумарного часу для однієї задачі */
 export const fetchTaskTotalTime = async (pageId) => {
   const texts = await getBlocksContent(pageId);
   let total = 0;
@@ -125,11 +117,12 @@ export const fetchTaskTotalTime = async (pageId) => {
   return total;
 };
 
-// ... решта функцій (markTaskAsDone, addNotionTask, updateTaskProgress) залишаються без змін
-export const markTaskAsDone = async (pageId) =>
-  apiRequest(`/v1/pages/${pageId}`, "PATCH", {
-    properties: { "🌸": { checkbox: true } },
+// ✨ ОСЬ ТА САМА НОВА ФУНКЦІЯ СТАТУСУ ✨
+export const updateTaskStatusInNotion = async (pageId, isCompleted) => {
+  return apiRequest(`/v1/pages/${pageId}`, "PATCH", {
+    properties: { "🌸": { checkbox: isCompleted } },
   });
+};
 
 export const deleteNotionTask = async (taskId) =>
   apiRequest(`/v1/pages/${taskId}`, "PATCH", { archived: true });
@@ -143,11 +136,19 @@ export const addNotionTask = async (title) =>
     },
   });
 
-export const updateTaskProgress = async (pageId, stepIndex, seconds) => {
+export const updateTaskProgress = async (pageId, stepIndex, seconds, totalSpentSeconds) => {
+  const propertiesToUpdate = {
+    "Current Step": { number: stepIndex },
+    "Elapsed Seconds": { number: seconds },
+  };
+
+  if (totalSpentSeconds !== undefined) {
+    propertiesToUpdate["Actual Time"] = { 
+      number: Math.round(totalSpentSeconds / 60) 
+    };
+  }
+
   return apiRequest(`/v1/pages/${pageId}`, "PATCH", {
-    properties: {
-      "Current Step": { number: stepIndex },
-      "Elapsed Seconds": { number: seconds },
-    },
+    properties: propertiesToUpdate,
   });
 };
