@@ -153,6 +153,6 @@ else if (isLastStep && isRoutine) {
     handlePrevStep,
     handleAddTask,
     handleManualSync, 
-    syncWithNotion: handleManualSync 
+    syncWithNotion: handleManualSync
   };
 }

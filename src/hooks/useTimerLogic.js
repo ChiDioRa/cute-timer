@@ -304,6 +304,41 @@ const handleResetTimer = () => {
   const { level, xpInLevel } = getLevelProgress(xp);
   const finishTime = getFinishTime(activeSteps, currentStepIndex);
 
+  const handleGenerateSteps = async () => {
+    const tasksToProcess = tasks.filter(t => !t.completed && !t.isRoutine);
+
+    if (tasksToProcess.length === 0) {
+      speak("Усі активні квести вже мають кроки!");
+      return;
+    }
+
+    setIsGenerating(true);
+    speak("Закликаю ШІ магію для створення кроків...");
+
+    try {
+      const webhookUrl = import.meta.env.VITE_GENERATE_STEPS_WEBHOOK;
+      
+      if (!webhookUrl) {
+        throw new Error("Не знайдено посилання на вебхук");
+      }
+
+      // ✨ МАГІЯ АНТИ-CORS ✨
+      // Ми просто стукаємо у вебхук як у двері, без складних заголовків і тіла
+      await fetch(webhookUrl, {
+        method: 'POST',
+        mode: 'no-cors' // 👈 Цей рядок каже браузеру ігнорувати CORS
+      });
+
+      speak("Запит успішно відправлено! Зачекай хвилинку і натисни синхронізацію.");
+      
+    } catch (error) {
+      console.error("Помилка виклику вебхука:", error);
+      speak("Ой, зв'язок із магічним сервером розірвано.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // --- 5. ПОВЕРНЕННЯ ---
   return {
     ...actions,
@@ -317,7 +352,7 @@ const handleResetTimer = () => {
     filterMode, setFilterMode, 
     updateTaskTypeInNotion, updateRepetitionsInNotion, toggleTaskType, incrementRoutine, sortMode, setSortMode,     
     isTimerOpen, setIsTimerOpen,
-    taskTotals,
+    taskTotals, handleGenerateSteps,
     remainingStepsCount: activeSteps.length > 0 ? activeSteps.length - (currentStepIndex + 1) : 0
   };
 }
