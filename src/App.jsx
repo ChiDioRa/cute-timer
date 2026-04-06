@@ -75,6 +75,8 @@ function App() {
             handleSkipStep={logic.handleSkipStep}
             handlePrevStep={logic.handlePrevStep}
             completeTask={logic.toggleTaskStatus}
+            onReset={logic.handleResetTimer} // 👈 ДОДАЙ ЦЕЙ РЯДОК
+            onToggle={logic.toggleTimer}
             speak={logic.speak}
             finishTime={logic.finishTime}
             remainingStepsCount={logic.remainingStepsCount}
@@ -140,22 +142,24 @@ function App() {
             </div>
           </div>
 
-          <TaskList
-            tasks={sortedTasks}
-            activeTaskId={logic.activeTaskId}
-            onTaskClick={logic.handleTaskClick}
-            onSync={logic.syncWithNotion}
-            isSyncing={logic.isSyncing}
-            taskTimes={logic.taskTimes}
-            onToggleComplete={logic.toggleTaskStatus}
-            onAddTask={logic.handleAddTask}
-            newTaskText={logic.newTaskText}
-            setNewTaskText={logic.setNewTaskText}
-            onGenerateSteps={logic.handleGenerateSteps}
-            isGenerating={logic.isGenerating}
-            onDeleteTask={logic.handleDeleteTask}
-            taskTotals={logic.taskTotals} // 👈 ДОДАЙ ЦЕЙ РЯДОК
-          />
+<TaskList
+  tasks={sortedTasks}
+  activeTaskId={logic.activeTaskId}
+  onTaskClick={logic.handleTaskClick}
+  onSync={logic.syncWithNotion}
+  isSyncing={logic.isSyncing}
+  taskTimes={logic.taskTimes}
+  onToggleComplete={logic.toggleTaskStatus}
+  onAddTask={logic.handleAddTask}
+  newTaskText={logic.newTaskText}
+  setNewTaskText={logic.setNewTaskText}
+  onGenerateSteps={logic.handleGenerateSteps}
+  isGenerating={logic.isGenerating}
+  onDeleteTask={logic.handleDeleteTask}
+  taskTotals={logic.taskTotals}
+  onToggleType={logic.toggleTaskType}        // ✅ БЕЗ КОМИ В КІНЦІ
+  onIncrementRoutine={logic.incrementRoutine} // ✅ БЕЗ КОМИ В КІНЦІ
+/>
         </div>
       </div>
     </div>

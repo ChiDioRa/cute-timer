@@ -55,6 +55,7 @@ function Timer({
   finishTime,
   remainingStepsCount,
   theme,
+  onReset,
 }) {
   const [isSuccess, setIsSuccess] = React.useState(false);
   
@@ -314,7 +315,7 @@ function Timer({
           <ChevronLeft size={26} />
         </button>
 
-        <button onClick={() => { setSeconds(0); speak("Скинуто"); }} className="p-2 text-accentMuted/30 hover:text-accent transition-colors">
+        <button onClick={onReset} className="p-2 text-accentMuted/30 hover:text-accent transition-colors">
           <RefreshCw size={20} />
         </button>
 

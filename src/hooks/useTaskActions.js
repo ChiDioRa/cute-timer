@@ -25,18 +25,21 @@ export function useTaskActions(state) {
   };
 
   /** 2. Завершення квесту/кроку */
-  const handleCompleteStep = async () => {
-    if (currentStepIndex < activeSteps.length - 1) {
+const handleCompleteStep = async () => {
+    const isLastStep = currentStepIndex === activeSteps.length - 1;
+    const task = tasks.find(t => t.id === activeTaskId);
+    const isRoutine = task?.isRoutine;
+
+    if (!isLastStep) {
+      // --- ЗВИЧАЙНИЙ ПЕРЕХІД НА НАСТУПНИЙ КРОК ---
       const nextIndex = currentStepIndex + 1;
       const bonus = getSpeedBonus(seconds, activeSteps[currentStepIndex]?.minutes);
       
-      // ✨ Формуємо спільну фразу для озвучки
       let phrase = "Чудова робота! ";
       if (bonus > 0) phrase += `Бонус швидкості ${bonus} XP! `;
       phrase += `Наступний крок: ${activeSteps[nextIndex].text}`;
       
       speak(phrase);
-
       addXp(GAME_CONFIG.STEP_XP + bonus);
       
       setCurrentStepIndex(nextIndex);
@@ -45,6 +48,30 @@ export function useTaskActions(state) {
       if (activeTaskId) {
         const totalSpentSeconds = taskTotals ? (taskTotals[activeTaskId] || 0) : 0;
         await updateTaskProgress(activeTaskId, nextIndex, 0, totalSpentSeconds);
+      }
+    } 
+else if (isLastStep && isRoutine) {
+      // Магія зациклення рутини
+      const newCount = (task.repetitions || 0) + 1;
+      
+      speak(`Чудово! Повторення номер ${newCount}. Починаємо з першого кроку.`);
+      addXp(GAME_CONFIG.STEP_XP * 2);
+
+      setCurrentStepIndex(0); 
+      setSeconds(0);
+
+      // Важливо оновити саме repetitions, а не completed!
+      try {
+        await Promise.all([
+          updateRepetitionsInNotion(activeTaskId, newCount),
+          updateTaskProgress(activeTaskId, 0, 0, taskTotals[activeTaskId] || 0)
+        ]);
+        
+        setTasks(prev => prev.map(t => 
+          t.id === activeTaskId ? { ...t, repetitions: newCount, completed: false } : t
+        ));
+      } catch (e) {
+        console.error(e);
       }
     }
   };

@@ -53,6 +53,7 @@ export const fetchNotionTasks = async () => {
   
   if (!data?.results) return [];
 
+  // ✨ Ось тут була помилка (page is not defined), тепер все ідеально:
   return Promise.all(data.results.map(async (page) => {
     const titleProp = Object.values(page.properties).find(p => p.type === 'title');
     const totalTime = await fetchTaskTotalTime(page.id);
@@ -61,6 +62,8 @@ export const fetchNotionTasks = async () => {
       id: page.id,
       text: titleProp?.title[0]?.plain_text || "Без назви",
       completed: page.properties["🌸"]?.checkbox || false,
+      isRoutine: page.properties["Routine"]?.checkbox || false,
+      repetitions: page.properties["Repetitions"]?.number || 0,
       totalTime, 
       createdAt: page.created_time, 
       savedStep: page.properties["Current Step"]?.number || 0,
@@ -113,14 +116,26 @@ export const fetchTaskTotalTime = async (pageId) => {
     }
   });
   
-  console.log(`⏱️ Задача ${pageId}: знайдено ${total} хв`); 
   return total;
 };
 
-// ✨ ОСЬ ТА САМА НОВА ФУНКЦІЯ СТАТУСУ ✨
+// --- ФУНКЦІЇ СТАТУСІВ ТА ОНОВЛЕНЬ ---
+
 export const updateTaskStatusInNotion = async (pageId, isCompleted) => {
   return apiRequest(`/v1/pages/${pageId}`, "PATCH", {
     properties: { "🌸": { checkbox: isCompleted } },
+  });
+};
+
+export const updateTaskTypeInNotion = async (pageId, isRoutine) => {
+  return apiRequest(`/v1/pages/${pageId}`, "PATCH", {
+    properties: { "Routine": { checkbox: isRoutine } },
+  });
+};
+
+export const updateRepetitionsInNotion = async (pageId, count) => {
+  return apiRequest(`/v1/pages/${pageId}`, "PATCH", {
+    properties: { "Repetitions": { number: count } },
   });
 };
 

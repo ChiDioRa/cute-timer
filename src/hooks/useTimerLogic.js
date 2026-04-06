@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'; 
 import { useVoice } from './useVoice'; 
 import { useTaskActions } from './useTaskActions';
-import { fetchTaskSteps, updateTaskProgress, updateTaskStatusInNotion} from '../services/notionService';
+import { fetchTaskSteps, updateTaskProgress, updateTaskStatusInNotion, updateTaskTypeInNotion, updateRepetitionsInNotion} from '../services/notionService';
 import { getLevelProgress, getFinishTime, GAME_CONFIG } from '../utils/logicHelpers';
 
 export function useTimerLogic() {
@@ -172,6 +172,13 @@ const toggleTaskStatus = async (targetId) => {
     const task = tasks.find(t => t.id === idToComplete);
     if (!task) return;
 
+    // ✨ ОЦЕЙ БЛОК ВИПРАВЛЯЄ ПОМИЛКУ ✨
+    if (task.isRoutine && !task.completed) {
+      // Якщо це рутина, замість завершення просто викликаємо лічильник
+      incrementRoutine(idToComplete);
+      return; // Виходимо, щоб код нижче (який переносить у завершені) не спрацював
+    }
+
     const currentState = task.checking !== undefined ? task.checking : task.completed;
     const willBeCompleted = !currentState;
 
@@ -210,10 +217,87 @@ const toggleTaskStatus = async (targetId) => {
     }
   };
 
-  const handleResetTimer = () => {
-    if (window.confirm("Скинути час цього кроку?")) {
+  // ✨ Перемикач типу задачі
+  const toggleTaskType = async (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const newIsRoutine = !task.isRoutine;
+    
+    // Візуально переносимо в іншу вкладку
+    setTasks(prev => prev.map(t => 
+      t.id === taskId ? { ...t, isRoutine: newIsRoutine } : t
+    ));
+    speak(newIsRoutine ? "Тепер це рутина" : "Тепер це квест");
+
+    try {
+      await updateTaskTypeInNotion(taskId, newIsRoutine);
+    } catch (e) { console.error("Помилка Notion:", e); }
+  };
+
+  // ✨ Лічильник повторень (замість галочки для рутин)
+  const incrementRoutine = async (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const newCount = (task.repetitions || 0) + 1;
+
+    // Оновлюємо лічильник локально
+    setTasks(prev => prev.map(t => 
+      t.id === taskId ? { ...t, repetitions: newCount } : t
+    ));
+    
+    // Даємо досвід за кожне виконання!
+    addXp(GAME_CONFIG.STEP_XP);
+    speak(`Плюс один! Вже ${newCount}!`);
+
+    try {
+      await updateRepetitionsInNotion(taskId, newCount);
+    } catch (e) { console.error("Помилка Notion:", e); }
+  };
+
+const handleResetTimer = () => {
+    // 1. Перевіряємо, чи взагалі є активна задача
+    if (!activeTaskId) {
+      console.error("❌ Помилка: Немає activeTaskId");
+      setSeconds(0); // Просто скидаємо час як запасний варіант
+      return;
+    }
+
+    const task = tasks.find(t => t.id === activeTaskId);
+    
+    // 2. Лог для відладки (бачимо в консолі F12)
+    console.log("🔍 Скидання для задачі:", task);
+
+    if (!task) {
+      console.warn("⚠️ Задачу не знайдено в списку tasks. Скидаю лише час.");
       setSeconds(0);
       setIsRunning(false);
+      return;
+    }
+
+    const isRoutine = task.isRoutine === true;
+    const message = isRoutine 
+      ? "Почати рутину з першого кроку та обнулити час?" 
+      : "Скинути таймер цього кроку?";
+
+    // 3. Тільки тепер викликаємо вікно підтвердження
+    if (window.confirm(message)) {
+      setSeconds(0);
+      setIsRunning(false);
+
+      if (isRoutine) {
+        console.log("🔄 Скидаю кроки рутини...");
+        setCurrentStepIndex(0);
+        
+        // Синхронізація з Notion
+        updateTaskProgress(activeTaskId, 0, 0, taskTotals[activeTaskId] || 0)
+          .catch(e => console.error("❌ Помилка Notion при скиданні:", e));
+          
+        speak("Починаємо спочатку");
+      } else {
+        speak("Таймер скинуто");
+      }
     }
   };
 
@@ -231,7 +315,7 @@ const toggleTaskStatus = async (targetId) => {
     isSyncing, isGenerating, newTaskText, setNewTaskText,
     handleTaskClick, resetToMain, handleResetTimer, toggleTaskStatus, finishTime, speak,
     filterMode, setFilterMode, 
-    sortMode, setSortMode,     
+    updateTaskTypeInNotion, updateRepetitionsInNotion, toggleTaskType, incrementRoutine, sortMode, setSortMode,     
     isTimerOpen, setIsTimerOpen,
     taskTotals,
     remainingStepsCount: activeSteps.length > 0 ? activeSteps.length - (currentStepIndex + 1) : 0
