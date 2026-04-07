@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Circle, Clock, Plus, Wand2, Trash2, ChevronDown, ChevronUp, Swords, Coffee, Repeat } from 'lucide-react';
+import { 
+  CheckCircle2, 
+  Circle, 
+  Clock, 
+  Plus, 
+  Wand2, 
+  Trash2, 
+  ChevronDown, 
+  ChevronUp, 
+  Swords, 
+  Coffee, 
+  Repeat 
+} from 'lucide-react';
 
 function TaskList({ 
   tasks, 
@@ -13,23 +25,21 @@ function TaskList({
   isGenerating,
   onDeleteTask,
   taskTotals = {},
-  onToggleType,       // 👈 ДОДАЙ ЦЕ СЮДИ
-  onIncrementRoutine  // 👈 І ЦЕ СЮДИ
+  onToggleType,
+  onIncrementRoutine
 }) {
   const [showCompleted, setShowCompleted] = useState(false);
   
-  // ✨ СТАН ДЛЯ ВКЛАДОК: 'tasks' (Квести) або 'routines' (Дейліки)
-// ✨ СТАН ДЛЯ ВКЛАДОК (Тепер з пам'яттю!)
+  // ✨ СТАН ДЛЯ ВКЛАДОК (З пам'яттю у localStorage)
   const [activeTab, setActiveTab] = useState(() => 
     localStorage.getItem('timer_active_tab') || 'tasks'
   );
 
-  // Щойно вкладка змінюється — записуємо це в пам'ять
   useEffect(() => {
     localStorage.setItem('timer_active_tab', activeTab);
   }, [activeTab]);
 
-  // ✨ Фільтруємо спочатку за вкладкою, а потім на активні/завершені
+  // ✨ Фільтрація: спочатку за типом (Квест/Рутина), потім за статусом
   const filteredTasks = tasks.filter(t => activeTab === 'routines' ? t.isRoutine : !t.isRoutine);
   
   const activeTasks = filteredTasks.filter(t => !t.completed);
@@ -55,8 +65,8 @@ function TaskList({
           onClick={() => setActiveTab('routines')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-[20px] transition-all duration-300 font-bold text-sm ${
             activeTab === 'routines' 
-? 'bg-accent text-accentText shadow-md scale-[1.02]' // 👈 ТЕПЕР ТУТ ACCENT
-              : 'text-accentMuted hover:bg-containerBg hover:text-accent' // 👈 І ТУТ
+              ? 'bg-accent text-accentText shadow-md scale-[1.02]' 
+              : 'text-accentMuted hover:bg-containerBg hover:text-accent'
           }`}
         >
           <Coffee size={18} />
@@ -64,7 +74,7 @@ function TaskList({
         </button>
       </div>
 
-      {/* ФОРМА ДОДАВАННЯ */}
+      {/* ФОРМА ДОДАВАННЯ (З адаптивним плейсхолдером) */}
       <form onSubmit={onAddTask} className="relative group">
         <input
           type="text"
@@ -83,7 +93,7 @@ function TaskList({
 
       <div className="w-full pb-10">
         
-{/* ✨ АКТИВНІ ЗАДАЧІ/РУТИНИ ✨ */}
+        {/* ✨ СПИСОК АКТИВНИХ ЕЛЕМЕНТІВ ✨ */}
         <div className="space-y-4">
           {activeTasks.map((task) => (
             <div
@@ -95,11 +105,9 @@ function TaskList({
                   : 'bg-containerBg/80 border-4 border-transparent hover:bg-containerBg hover:shadow-theme-sm'
               }`}
             >
-              {/* ✨ ЛІВА ЧАСТИНА (Галочка + Текст) ✨ */}
-              {/* Змінили items-center на items-start, додали min-w-0 */}
               <div className="flex items-start space-x-5 flex-1 min-w-0 pt-1">
                 
-                {/* КНОПКА ВИКОНАННЯ (залишається без змін, але ми забороняємо їй стискатися через shrink-0) */}
+                {/* КНОПКА ВИКОНАННЯ (Різна для квестів та рутин) */}
                 <div className="shrink-0">
                   {task.isRoutine ? (
                     <button
@@ -124,17 +132,14 @@ function TaskList({
                   )}
                 </div>
 
-                {/* БЛОК ТЕКСТУ ТА ІНДИКАТОРІВ */}
+                {/* ТЕКСТ ТА ІНФОРМАЦІЯ */}
                 <div className="flex flex-col flex-1 min-w-0">
-                  {/* Текст задачі: додали break-words */}
                   <span className={`text-sm lg:text-base font-bold transition-all duration-500 leading-tight break-words ${
                     task.checking ? 'text-accentMuted line-through decoration-containerBorder decoration-1' : 'text-appText'
                   }`}>
                     {task.text}
                   </span>
                   
-                  {/* ✨ НИЖНІЙ РЯДОК: Час + ЗАРАЗ ✨ */}
-                  {/* flex-wrap дозволяє їм переноситися, якщо місця зовсім мало */}
                   <div className="flex items-center flex-wrap gap-3 mt-2">
                     {task.totalTime > 0 && (
                       <div className="flex items-center gap-1.5">
@@ -145,7 +150,6 @@ function TaskList({
                       </div>
                     )}
 
-                    {/* Індикатор переїхав сюди! */}
                     {activeTaskId === task.id && (
                       <div className="flex items-center gap-1.5 px-2 py-0.5 bg-activeTaskBg rounded-full animate-pulse">
                         <div className="w-1.5 h-1.5 bg-accent rounded-full shadow-theme-sm" />
@@ -156,22 +160,19 @@ function TaskList({
                 </div>
               </div>
               
-              {/* ✨ ПРАВА ЧАСТИНА: КНОПКИ (З'являються при наведенні) ✨ */}
-              {/* shrink-0 не дає тексту виштовхнути їх за екран */}
-              <div 
-                className={`flex items-center gap-1 transition-all duration-300 shrink-0 ml-2 pt-1 ${
+              {/* КНОПКИ КЕРУВАННЯ (Тип та Видалення) */}
+              <div className={`flex items-center gap-1 transition-all duration-300 shrink-0 ml-2 pt-1 ${
                   activeTaskId === task.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
               >
                 <button 
                   onClick={(e) => { e.stopPropagation(); onToggleType(task.id); }}
                   className="p-2 text-containerBorder hover:text-accent hover:bg-accent/10 rounded-full transition-colors"
-                  title={task.isRoutine ? "Зробити одноразовим квестом" : "Зробити повторюваною рутиною"}
+                  title={task.isRoutine ? "Зробити квестом" : "Зробити рутиною"}
                 >
                   <Repeat size={16} />
                 </button>
 
-                {/* ✨ Додали window.confirm ✨ */}
                 <button 
                   onClick={(e) => { 
                     e.stopPropagation(); 
@@ -195,7 +196,7 @@ function TaskList({
           )}
         </div>
 
-        {/* КНОПКА ГЕНЕРАЦІЇ КРОКІВ */}
+        {/* КНОПКА ГЕНЕРАЦІЇ ШІ-КРОКІВ */}
         {activeTab === 'tasks' && (
           <button
             onClick={onGenerateSteps}
@@ -211,7 +212,7 @@ function TaskList({
           </button>
         )}
 
-        {/* ✨ ЗАВЕРШЕНІ ЗАДАЧІ (СПОЙЛЕР) ✨ */}
+        {/* ✨ СПОЙЛЕР ЗАВЕРШЕНИХ ЗАВДАНЬ ✨ */}
         {completedTasks.length > 0 && (
           <div className="mt-10">
             <button 
@@ -265,7 +266,6 @@ function TaskList({
                         </button>
                       </div>
 
-                      {/* БЛОК ПЛАН vs ФАКТ */}
                       <div className="flex items-center gap-4 mt-2 ml-10">
                         <div className="flex items-center gap-1.5 opacity-50">
                           <Clock size={12} className="text-accentMuted" />

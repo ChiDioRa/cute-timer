@@ -1,7 +1,8 @@
 import { 
   fetchNotionTasks, 
   addNotionTask, 
-  updateTaskProgress 
+  updateTaskProgress,
+  updateRoutineInNotion // Додано імпорт
 } from '../services/notionService';
 import { GAME_CONFIG, getSpeedBonus } from '../utils/logicHelpers';
 
@@ -25,7 +26,7 @@ export function useTaskActions(state) {
   };
 
   /** 2. Завершення квесту/кроку */
-const handleCompleteStep = async () => {
+  const handleCompleteStep = async () => {
     const isLastStep = currentStepIndex === activeSteps.length - 1;
     const task = tasks.find(t => t.id === activeTaskId);
     const isRoutine = task?.isRoutine;
@@ -50,7 +51,7 @@ const handleCompleteStep = async () => {
         await updateTaskProgress(activeTaskId, nextIndex, 0, totalSpentSeconds);
       }
     } 
-else if (isLastStep && isRoutine) {
+    else if (isLastStep && isRoutine) {
       // ✨ 1. Рахуємо нову кількість і фіксуємо точний час
       const newCount = (task.repetitions || 0) + 1;
       const nowIso = new Date().toISOString(); 
@@ -64,7 +65,7 @@ else if (isLastStep && isRoutine) {
 
       try {
         await Promise.all([
-          // ✨ 2. Відправляємо в Notion цифру ТА ЧАС (зверни увагу на назву функції)
+          // ✨ 2. Відправляємо в Notion цифру ТА ЧАС
           updateRoutineInNotion(activeTaskId, newCount, nowIso),
           
           updateTaskProgress(activeTaskId, 0, 0, taskTotals[activeTaskId] || 0)
@@ -87,7 +88,6 @@ else if (isLastStep && isRoutine) {
     if (currentStepIndex < activeSteps.length - 1) {
       const nextIndex = currentStepIndex + 1;
       
-      // ✨ Озвучуємо скіп і наступний крок
       speak(`Крок пропущено. Наступний крок: ${activeSteps[nextIndex].text}`);
 
       setCurrentStepIndex(nextIndex);
