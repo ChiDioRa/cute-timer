@@ -19,7 +19,7 @@ export default function Profile({ level, xpInLevel, energy, setEnergy, theme, se
         
         {/* КАРТКА 1: LVL ТА XP (З ПОВЕРНУТИМ СВІТІННЯМ) */}
         <div className="w-full lg:flex-[1.1] flex items-center gap-4 bg-containerBg/60 backdrop-blur-md p-4 pr-8 rounded-[28px] border border-containerBorder/60 shadow-theme-lg">
-          <div className="w-14 h-14 bg-accent rounded-2xl flex flex-col items-center justify-center text-accentText shadow-lg shadow-accent/40 shrink-0">
+          <div className="w-14 h-14 bg-accent rounded-2xl flex flex-col items-center justify-center text-accentText shadow-md shadow-accent/40 shrink-0">
             <span className="text-[10px] font-black leading-none opacity-70 uppercase tracking-widest">Lvl</span>
             <span className="text-2xl font-black leading-none">{level}</span>
           </div>
