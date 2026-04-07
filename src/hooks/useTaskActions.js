@@ -51,27 +51,33 @@ const handleCompleteStep = async () => {
       }
     } 
 else if (isLastStep && isRoutine) {
-      // Магія зациклення рутини
+      // ✨ 1. Рахуємо нову кількість і фіксуємо точний час
       const newCount = (task.repetitions || 0) + 1;
+      const nowIso = new Date().toISOString(); 
       
-      speak(`Чудово! Повторення номер ${newCount}. Починаємо з першого кроку.`);
+      speak(`Дейлік виконано! Зараховую прогрес на сьогодні.`);
       addXp(GAME_CONFIG.STEP_XP * 2);
 
+      // Скидаємо кроки і таймер (готуємо задачу на завтра)
       setCurrentStepIndex(0); 
       setSeconds(0);
 
-      // Важливо оновити саме repetitions, а не completed!
       try {
         await Promise.all([
-          updateRepetitionsInNotion(activeTaskId, newCount),
+          // ✨ 2. Відправляємо в Notion цифру ТА ЧАС (зверни увагу на назву функції)
+          updateRoutineInNotion(activeTaskId, newCount, nowIso),
+          
           updateTaskProgress(activeTaskId, 0, 0, taskTotals[activeTaskId] || 0)
         ]);
         
+        // ✨ 3. Оновлюємо візуал: ставимо completed: true, щоб вона сховалася до завтра!
         setTasks(prev => prev.map(t => 
-          t.id === activeTaskId ? { ...t, repetitions: newCount, completed: false } : t
+          t.id === activeTaskId 
+            ? { ...t, repetitions: newCount, completed: true, lastDoneDate: nowIso } 
+            : t
         ));
       } catch (e) {
-        console.error(e);
+        console.error("Помилка оновлення дейліка:", e);
       }
     }
   };

@@ -83,78 +83,102 @@ function TaskList({
 
       <div className="w-full pb-10">
         
-        {/* ✨ АКТИВНІ ЗАДАЧІ/РУТИНИ ✨ */}
+{/* ✨ АКТИВНІ ЗАДАЧІ/РУТИНИ ✨ */}
         <div className="space-y-4">
           {activeTasks.map((task) => (
             <div
               key={task.id}
               onClick={() => onTaskClick(task.id)}
-              className={`group flex items-center justify-between p-6 rounded-[35px] cursor-pointer transition-all duration-500 ${
+              className={`group flex items-start justify-between p-6 rounded-[35px] cursor-pointer transition-all duration-500 ${
                 activeTaskId === task.id 
                   ? 'bg-containerBg border-4 border-containerBorder shadow-theme-lg scale-[1.02]' 
                   : 'bg-containerBg/80 border-4 border-transparent hover:bg-containerBg hover:shadow-theme-sm'
               }`}
             >
-              <div className="flex items-center space-x-5 flex-1">
-{task.isRoutine ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onIncrementRoutine(task.id); }}
-                    className="flex flex-col items-center justify-center w-10 h-10 rounded-2xl bg-accent/10 text-accent hover:bg-accent hover:text-accentText transition-all duration-300 active:scale-75 group/btn"
-                    title="Виконати ще раз!"
-                  >
-                    <Plus size={16} strokeWidth={3} className="mb-[-2px] group-hover/btn:animate-ping" />
-                    <span className="text-[10px] font-black">{task.repetitions || 0}</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleComplete(task.id); }}
-                    className={`transition-all duration-500 transform active:scale-50 ${
-                      task.checking ? 'text-emerald-400 scale-110' : 'text-containerBorder group-hover:text-accentMuted'
-                    }`}
-                  >
-                    {task.checking ? <CheckCircle2 size={24} strokeWidth={2.5} /> : <Circle size={24} strokeWidth={2.5} />}
-                  </button>
-                )}
+              {/* ✨ ЛІВА ЧАСТИНА (Галочка + Текст) ✨ */}
+              {/* Змінили items-center на items-start, додали min-w-0 */}
+              <div className="flex items-start space-x-5 flex-1 min-w-0 pt-1">
+                
+                {/* КНОПКА ВИКОНАННЯ (залишається без змін, але ми забороняємо їй стискатися через shrink-0) */}
+                <div className="shrink-0">
+                  {task.isRoutine ? (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onIncrementRoutine(task.id); }}
+                      className="flex flex-col items-center justify-center w-10 h-10 rounded-2xl bg-accent/10 text-accent hover:bg-accent hover:text-accentText transition-all duration-300 active:scale-75 group/btn"
+                      title="Виконати ще раз!"
+                    >
+                      <Plus size={16} strokeWidth={3} className="mb-[-2px] group-hover/btn:animate-ping" />
+                      <span className="text-[10px] font-black">{task.repetitions || 0}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleComplete(task.id); }}
+                      className={`transition-all duration-500 transform active:scale-50 ${
+                        task.checking ? 'text-accent scale-110' : 'text-containerBorder group-hover:text-accentMuted'
+                      }`}
+                    >
+                      {task.checking ? <CheckCircle2 size={24} strokeWidth={2.5} /> : <Circle size={24} strokeWidth={2.5} />}
+                    </button>
+                  )}
+                </div>
 
-                <div className="flex flex-col">
-                  <span className={`text-sm lg:text-base font-bold transition-all duration-500 leading-tight ${
+                {/* БЛОК ТЕКСТУ ТА ІНДИКАТОРІВ */}
+                <div className="flex flex-col flex-1 min-w-0">
+                  {/* Текст задачі: додали break-words */}
+                  <span className={`text-sm lg:text-base font-bold transition-all duration-500 leading-tight break-words ${
                     task.checking ? 'text-accentMuted line-through decoration-containerBorder decoration-1' : 'text-appText'
                   }`}>
                     {task.text}
                   </span>
                   
-                  {task.totalTime > 0 && (
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <Clock size={12} className="text-accentMuted" />
-                      <span className="text-[10px] font-black text-accentMuted uppercase tracking-widest">
-                        {task.totalTime} хв всього
-                      </span>
-                    </div>
-                  )}
+                  {/* ✨ НИЖНІЙ РЯДОК: Час + ЗАРАЗ ✨ */}
+                  {/* flex-wrap дозволяє їм переноситися, якщо місця зовсім мало */}
+                  <div className="flex items-center flex-wrap gap-3 mt-2">
+                    {task.totalTime > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={12} className="text-accentMuted" />
+                        <span className="text-[10px] font-black text-accentMuted uppercase tracking-widest">
+                          {task.totalTime} хв всього
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Індикатор переїхав сюди! */}
+                    {activeTaskId === task.id && (
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-activeTaskBg rounded-full animate-pulse">
+                        <div className="w-1.5 h-1.5 bg-accent rounded-full shadow-theme-sm" />
+                        <span className="text-[9px] font-black text-accent uppercase tracking-widest">Зараз</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               
-              {activeTaskId === task.id && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-activeTaskBg rounded-full animate-pulse">
-                  <div className="w-2 h-2 bg-accent rounded-full shadow-theme-sm" />
-                  <span className="text-[9px] font-black text-accent uppercase tracking-widest">Зараз</span>
-                </div>
-              )}
-              
-{/* ✨ ПРИХОВАНІ КНОПКИ (З'являються при наведенні) ✨ */}
-              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all duration-300">
+              {/* ✨ ПРАВА ЧАСТИНА: КНОПКИ (З'являються при наведенні) ✨ */}
+              {/* shrink-0 не дає тексту виштовхнути їх за екран */}
+              <div 
+                className={`flex items-center gap-1 transition-all duration-300 shrink-0 ml-2 pt-1 ${
+                  activeTaskId === task.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
+              >
                 <button 
                   onClick={(e) => { e.stopPropagation(); onToggleType(task.id); }}
-                  className="p-2 text-containerBorder hover:text-emerald-400 hover:bg-emerald-400/10 rounded-full transition-colors"
+                  className="p-2 text-containerBorder hover:text-accent hover:bg-accent/10 rounded-full transition-colors"
                   title={task.isRoutine ? "Зробити одноразовим квестом" : "Зробити повторюваною рутиною"}
                 >
                   <Repeat size={16} />
                 </button>
 
+                {/* ✨ Додали window.confirm ✨ */}
                 <button 
-                  onClick={(e) => { e.stopPropagation(); onDeleteTask(task.id); }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    if (window.confirm("Точно видалити цю задачу?")) {
+                      onDeleteTask(task.id); 
+                    }
+                  }}
                   className="p-2 text-containerBorder hover:text-rose-400 hover:bg-rose-400/10 rounded-full transition-colors"
                   title="Видалити"
                 >

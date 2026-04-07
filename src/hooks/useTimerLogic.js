@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'; 
 import { useVoice } from './useVoice'; 
 import { useTaskActions } from './useTaskActions';
-import { fetchTaskSteps, updateTaskProgress, updateTaskStatusInNotion, updateTaskTypeInNotion, updateRepetitionsInNotion} from '../services/notionService';
+import { fetchTaskSteps, updateTaskProgress, updateTaskStatusInNotion, updateTaskTypeInNotion, updateRoutineInNotion} from '../services/notionService';
 import { getLevelProgress, getFinishTime, GAME_CONFIG } from '../utils/logicHelpers';
 
 export function useTimerLogic() {
@@ -172,20 +172,22 @@ const toggleTaskStatus = async (targetId) => {
     const task = tasks.find(t => t.id === idToComplete);
     if (!task) return;
 
-    // ✨ ОЦЕЙ БЛОК ВИПРАВЛЯЄ ПОМИЛКУ ✨
+    // ✨ Рутини ми не чіпаємо, вони вже вміють писати час через incrementRoutine
     if (task.isRoutine && !task.completed) {
-      // Якщо це рутина, замість завершення просто викликаємо лічильник
       incrementRoutine(idToComplete);
-      return; // Виходимо, щоб код нижче (який переносить у завершені) не спрацював
+      return; 
     }
 
     const currentState = task.checking !== undefined ? task.checking : task.completed;
     const willBeCompleted = !currentState;
+    
+    // 🕒 СТВОРЮЄМО ВІДБИТОК ЧАСУ
+    const nowIso = new Date().toISOString();
 
     if (willBeCompleted) {
-      // 🟢 1. РОБИМО ЗАДАЧУ ВИКОНАНОЮ (Із затримкою для краси)
+      // 🟢 1. РОБИМО ЗАДАЧУ ВИКОНАНОЮ (Анімація)
       setTasks(prev => prev.map(t => 
-        t.id === idToComplete ? { ...t, checking: true } : t
+        t.id === idToComplete ? { ...t, checking: true, lastDoneDate: nowIso } : t
       ));
       
       speak("Задачу виконано!");
@@ -202,16 +204,18 @@ const toggleTaskStatus = async (targetId) => {
       }, 1500); 
       
     } else {
-      // 🔴 2. СКАСОВУЄМО ВИКОНАННЯ (Миттєво повертаємо наверх!)
+      // 🔴 2. СКАСОВУЄМО ВИКОНАННЯ (Стираємо час у UI)
       setTasks(prev => prev.map(t => 
-        t.id === idToComplete ? { ...t, completed: false, checking: undefined } : t
+        t.id === idToComplete ? { ...t, completed: false, checking: undefined, lastDoneDate: null } : t
       ));
       speak("Скасовано");
     }
 
-    // 3. Відправляємо офіційний статус у Notion
+    // 3. Відправляємо офіційний статус ТА ЧАС у Notion
+// 3. Відправляємо офіційний статус у Notion
     try {
-      await updateTaskStatusInNotion(idToComplete, willBeCompleted);
+      // ✨ ДОДАЄМО nowIso сюди:
+      await updateTaskStatusInNotion(idToComplete, willBeCompleted, nowIso); 
     } catch (e) {
       console.error("Помилка Notion:", e);
     }
@@ -241,19 +245,21 @@ const toggleTaskStatus = async (targetId) => {
     if (!task) return;
 
     const newCount = (task.repetitions || 0) + 1;
+    const nowIso = new Date().toISOString(); // ✨ Фіксуємо точну секунду виконання!
 
-    // Оновлюємо лічильник локально
+    // Локально робимо її "виконаною" і ховаємо
     setTasks(prev => prev.map(t => 
-      t.id === taskId ? { ...t, repetitions: newCount } : t
+      t.id === taskId ? { ...t, repetitions: newCount, completed: true, lastDoneDate: nowIso } : t
     ));
-    
-    // Даємо досвід за кожне виконання!
-    addXp(GAME_CONFIG.STEP_XP);
-    speak(`Плюс один! Вже ${newCount}!`);
+
+    speak(`Рутину виконано!`);
 
     try {
-      await updateRepetitionsInNotion(taskId, newCount);
-    } catch (e) { console.error("Помилка Notion:", e); }
+      // Викликаємо оновлену функцію (передай сюди правильну назву з notionService)
+      await updateRoutineInNotion(taskId, newCount, nowIso);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
 const handleResetTimer = () => {
@@ -350,7 +356,7 @@ const handleResetTimer = () => {
     isSyncing, isGenerating, newTaskText, setNewTaskText,
     handleTaskClick, resetToMain, handleResetTimer, toggleTaskStatus, finishTime, speak,
     filterMode, setFilterMode, 
-    updateTaskTypeInNotion, updateRepetitionsInNotion, toggleTaskType, incrementRoutine, sortMode, setSortMode,     
+    updateTaskTypeInNotion, updateRoutineInNotion, toggleTaskType, incrementRoutine, sortMode, setSortMode,     
     isTimerOpen, setIsTimerOpen,
     taskTotals, handleGenerateSteps,
     remainingStepsCount: activeSteps.length > 0 ? activeSteps.length - (currentStepIndex + 1) : 0
