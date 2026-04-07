@@ -85,9 +85,10 @@ export const fetchNotionTasks = async () => {
     return {
       id: page.id,
       text: titleProp?.title[0]?.plain_text || "Без назви",
-      completed: page.properties["🌸"]?.checkbox || false,
+      completed: isCompleted,
       isRoutine: page.properties["Routine"]?.checkbox || false,
       repetitions: page.properties["Repetitions"]?.number || 0,
+      lastDoneDate: lastDoneStr,
       totalTime, 
       createdAt: page.created_time, 
       savedStep: page.properties["Current Step"]?.number || 0,

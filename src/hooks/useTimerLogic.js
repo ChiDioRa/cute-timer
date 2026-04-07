@@ -31,6 +31,25 @@ export function useTimerLogic() {
 
   const wakeLockRef = useRef(null); 
   const { speak } = useVoice(); 
+
+  const isRoutineDoneForToday = (lastDoneDate) => {
+  if (!lastDoneDate) return false;
+
+  const now = new Date();
+  const lastDone = new Date(lastDoneDate);
+
+  // Створюємо точку останнього "скидання" (сьогодні о 05:00)
+  const resetPoint = new Date();
+  resetPoint.setHours(5, 0, 0, 0);
+
+  // Якщо зараз ще НЕМАЄ 5-ї ранку, то день почався вчора о 5-й
+  if (now.getHours() < 5) {
+    resetPoint.setDate(resetPoint.getDate() - 1);
+  }
+
+  // Якщо час виконання пізніший за останню 5-ту ранку — задача свіжа!
+  return lastDone > resetPoint;
+};
   
   // Зберігає стан задачі на момент її відкриття
   const initialTaskState = useRef({ step: 0, seconds: 0 });
@@ -357,7 +376,7 @@ const handleResetTimer = () => {
     handleTaskClick, resetToMain, handleResetTimer, toggleTaskStatus, finishTime, speak,
     filterMode, setFilterMode, 
     updateTaskTypeInNotion, updateRoutineInNotion, toggleTaskType, incrementRoutine, sortMode, setSortMode,     
-    isTimerOpen, setIsTimerOpen,
+    isTimerOpen, setIsTimerOpen, isRoutineDoneForToday,
     taskTotals, handleGenerateSteps,
     remainingStepsCount: activeSteps.length > 0 ? activeSteps.length - (currentStepIndex + 1) : 0
   };
