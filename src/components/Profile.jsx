@@ -33,7 +33,7 @@ export default function Profile({
         <div className="relative group">
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-accent overflow-hidden shadow-lg transform transition-transform group-hover:scale-105 bg-white">
             <img
-              src="https://api.dicebear.com/7.x/notionists/svg?seed=Chika&backgroundColor=transparent"
+              src="https://pbs.twimg.com/media/GyAUFjLXEAAAhxg?format=jpg&name=small"
               alt="Мій Аватар"
               className="w-full h-full object-cover"
             />
@@ -50,7 +50,7 @@ export default function Profile({
                 Чі 🌸
               </h3>
               <div className="flex items-center gap-1.5 text-xs font-bold text-appText/70">
-                <Flame size={14} className="text-orange-400" />
+                <Sparkles size={14} className="text-appText/70" />
                 <span>{totalMinutes} хв фокусу</span>
               </div>
             </div>
