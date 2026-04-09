@@ -1,88 +1,142 @@
-import { Zap, Palette } from 'lucide-react';
+import { Zap, Sparkles, Paintbrush, Moon, Leaf, Timer as TimerIcon, Coffee, Flame } from "lucide-react";
+import { useState } from "react";
 
-export default function Profile({ level, xpInLevel, energy, setEnergy, theme, setTheme, taskTotals = {} }) {
+export default function Profile({
+  level,
+  xpInLevel,
+  energy,
+  setEnergy,
+  theme,
+  setTheme,
+  taskTotals,
+  activeTab,    
+  setActiveTab  
+}) {
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const xpNeeded = level * 1000;
+  const progressPercent = (xpInLevel / xpNeeded) * 100;
 
-  // ✨ Вираховуємо загальний час фокусу (сумуємо всі секунди з усіх задач)
-  const totalFocusSeconds = Object.values(taskTotals).reduce((sum, val) => sum + val, 0);
+  const themes = [
+    { id: "sakura", name: "Sakura", icon: Sparkles },
+    { id: "midnight", name: "Midnight", icon: Moon },
+    { id: "matcha", name: "Matcha", icon: Leaf },
+  ];
+
+  const totalFocusSeconds = taskTotals ? Object.values(taskTotals).reduce((sum, val) => sum + val, 0) : 0;
   const totalMinutes = Math.floor(totalFocusSeconds / 60);
 
-  // ✨ МАГІЧНІ КЛАСИ ДЛЯ СВІТІННЯ (Shadow Glow)
-  const getEnergyColor = (val) => {
-    if (val > 60) return 'bg-emerald-400 border-emerald-600 shadow-[0_0_12px_rgba(52,211,153,0.4)]';
-    if (val > 20) return 'bg-yellow-400 border-yellow-600 shadow-[0_0_12px_rgba(250,204,21,0.4)] shadow-glow'; // Додано світіння
-    return 'bg-rose-400 border-rose-600 shadow-[0_0_12px_rgba(251,113,133,0.4)]';
-  };
-
   return (
-    <div className="w-full max-w-5xl mx-auto mb-12 px-4">
-      <div className="flex flex-col lg:flex-row justify-center items-center gap-3 lg:gap-6">
-        
-        {/* КАРТКА 1: LVL ТА XP (З ПОВЕРНУТИМ СВІТІННЯМ) */}
-        <div className="w-full lg:flex-[1.1] flex items-center gap-4 bg-containerBg/60 backdrop-blur-md p-4 pr-8 rounded-[28px] border border-containerBorder/60 shadow-theme-lg">
-          <div className="w-14 h-14 bg-accent rounded-2xl flex flex-col items-center justify-center text-accentText shadow-md shadow-accent/40 shrink-0">
-            <span className="text-[10px] font-black leading-none opacity-70 uppercase tracking-widest">Lvl</span>
-            <span className="text-2xl font-black leading-none">{level}</span>
+    <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between bg-containerBg/50 backdrop-blur-md p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-theme-md border border-containerBorder mb-10 transition-colors duration-700 relative z-20">
+      
+      {/* ЛІВА ЧАСТИНА: Аватарка, Рівень, Нік, Хвилини */}
+      <div className="flex items-center gap-4 sm:gap-6 w-full md:w-auto mb-6 md:mb-0">
+        <div className="relative group">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-accent overflow-hidden shadow-lg transform transition-transform group-hover:scale-105 bg-white">
+            <img
+              src="https://api.dicebear.com/7.x/notionists/svg?seed=Chika&backgroundColor=transparent"
+              alt="Мій Аватар"
+              className="w-full h-full object-cover"
+            />
           </div>
-          
-          <div className="flex-1 flex flex-col gap-2">
-            <div className="flex justify-between items-end">
-               <span className="text-[10px] font-black text-accent uppercase tracking-widest opacity-80">Experience</span>
-               <span className="text-[11px] font-bold opacity-40">{xpInLevel} / 500</span>
-            </div>
-            <div className="h-2.5 w-full bg-containerBorder rounded-full overflow-hidden border border-containerBorder/50 p-0.5 shadow-inner">
-              <div 
-                className="h-full bg-accent rounded-full transition-all duration-1000 shadow-[0_0_10px_var(--accent)]" 
-                style={{ width: `${(xpInLevel / 500) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          {/* ✨ БЛОК СТАТИСТИКИ ЧАСУ (tracking-widest на місці!) ✨ */}
-          <div className="flex flex-col items-end shrink-0 ml-2">
-            <span className="text-[10px] font-black text-accent uppercase tracking-widest opacity-80">Фокус</span>
-            <span className="text-sm font-bold opacity-80">{totalMinutes} хв</span>
+          <div className="absolute -bottom-2 -right-2 bg-accent text-white w-8 h-8 rounded-full flex items-center justify-center font-black border-2 border-containerBg shadow-sm text-sm">
+            {level}
           </div>
         </div>
 
-        <div className="w-full flex flex-row gap-3 lg:contents">
+        <div className="flex-1 min-w-[200px]">
+          <div className="flex justify-between items-end mb-2">
+            <div>
+              <h3 className="font-black text-appText text-lg sm:text-xl tracking-tight mb-1">
+                Чі 🌸
+              </h3>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-appText/70">
+                <Flame size={14} className="text-orange-400" />
+                <span>{totalMinutes} хв фокусу</span>
+              </div>
+            </div>
+            
+            <span className="text-xs font-bold text-accent">
+              {xpInLevel} / {xpNeeded} XP
+            </span>
+          </div>
+          <div className="w-full h-3 sm:h-4 bg-containerBorder rounded-full overflow-hidden shadow-inner">
+            <div
+              className="h-full bg-accent transition-all duration-1000 ease-out relative"
+              style={{ width: `${progressPercent}%` }}
+            >
+              <div className="absolute inset-0 bg-white/20 w-full animate-shimmer" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ПРАВА ЧАСТИНА: Перемикач, Енергія, Тема */}
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-4 w-full md:w-auto justify-center md:justify-end">
+        
+        {/* Перемикач інтерфейсів */}
+        <div className="flex items-center bg-containerBg border border-containerBorder rounded-full p-1 shadow-sm">
+          <button
+            onClick={() => setActiveTab('timer')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors text-xs font-bold ${
+              activeTab === 'timer' 
+                ? 'bg-accent text-white shadow-sm' 
+                : 'text-appText/70 hover:text-accent hover:bg-containerBorder/50'
+            }`}
+          >
+            <TimerIcon size={14} /> Фокус
+          </button>
           
-          {/* КАРТКА 2: ЕНЕРГІЯ (З ПОВЕРНУТИМ СВІТІННЯМ DOTS) */}
-          <div className="flex-[1.5] lg:flex-1 flex items-center justify-center gap-2 sm:gap-4 bg-containerBg/60 backdrop-blur-md p-3 sm:p-4 lg:px-8 rounded-[28px] border border-containerBorder/60 shadow-theme-lg">
-            <Zap size={20} className={`${energy <= 20 ? 'text-rose-400' : 'text-amber-400'} fill-current shrink-0`} />
-            <div className="flex gap-1.5 sm:gap-2">
-              {[...Array(5)].map((_, i) => {
-                const dotValue = (i + 1) * 20;
-                return (
-                  <button 
-                    key={i} 
-                    onClick={() => setEnergy(dotValue)}
-                    className={`w-4 h-4 sm:w-5 sm:h-5 lg:w-5 lg:h-5 rounded-md sm:rounded-lg transition-all duration-300 border-b-2 active:scale-75
-                      ${energy >= dotValue ? `${getEnergyColor(energy)} shadow-md` : 'bg-accent/5 border-accent/10 opacity-60 hover:opacity-100'}`}
-                  />
-                );
-              })}
-            </div>
-          </div>
+          <button
+            onClick={() => setActiveTab('farm')}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors text-xs font-bold ${
+              activeTab === 'farm' 
+                ? 'bg-accent text-white shadow-sm' 
+                : 'text-appText/70 hover:text-accent hover:bg-containerBorder/50'
+            }`}
+          >
+            <Coffee size={14} /> Кімната
+          </button>
+        </div>
 
-          {/* КАРТКА 3: СКІНИ (ЧИСТИЙ "СКЛЯНИЙ" СТИЛЬ) */}
-          <div className="flex-1 lg:flex-none lg:w-fit flex items-center justify-center gap-2 sm:gap-4 bg-containerBg/60 backdrop-blur-md p-3 sm:p-4 lg:px-8 rounded-[28px] border border-containerBorder/60 shadow-theme-lg">
-            <div className="hidden sm:flex flex-col items-start leading-none opacity-40">
-              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-accent">Skins</span>
-              <Palette size={12} className="mt-1" />
-            </div>
-            <div className="flex gap-2 sm:gap-3">
-              {['sakura', 'midnight', 'matcha'].map((t) => (
-                <button 
-                  key={t}
-                  onClick={() => setTheme(t)} 
-                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full transition-all duration-300 hover:rotate-12 hover:scale-125
-                    ${t === 'sakura' ? 'bg-pink-300' : t === 'midnight' ? 'bg-slate-800' : 'bg-emerald-300'}
-                    ${theme === t ? 'ring-2 ring-offset-2 ring-accent scale-110 shadow-lg shadow-accent/30' : 'opacity-30 hover:opacity-100'}`} 
-                />
-              ))}
-            </div>
-          </div>
+        {/* Кнопка Енергії */}
+        <button
+          onClick={() => setEnergy(Math.min(100, energy + 20))}
+          className="flex items-center gap-2 bg-yellow-100/80 hover:bg-yellow-200/90 text-yellow-700 px-4 py-2.5 rounded-full font-bold text-sm shadow-sm transition-all border border-yellow-200"
+        >
+          <Zap size={16} className={energy < 30 ? "animate-bounce" : ""} />
+          {energy}%
+        </button>
 
+        {/* Кнопка Теми */}
+        <div className="relative">
+          <button
+            onClick={() => setShowThemeMenu(!showThemeMenu)}
+            className="p-2.5 bg-containerBg hover:bg-containerBorder rounded-full text-accent shadow-sm transition-all border border-containerBorder flex items-center justify-center"
+          >
+            <Paintbrush size={18} />
+          </button>
+
+          {showThemeMenu && (
+             <div className="absolute right-0 top-12 mt-2 w-40 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
+               {themes.map((t) => {
+                 const Icon = t.icon;
+                 return (
+                   <button
+                     key={t.id}
+                     onClick={() => {
+                       setTheme(t.id);
+                       setShowThemeMenu(false);
+                     }}
+                     className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors text-sm font-bold
+                       ${theme === t.id ? "bg-pink-50 text-pink-500" : "text-gray-600 hover:bg-gray-50"}
+                     `}
+                   >
+                     <Icon size={16} /> {t.name}
+                   </button>
+                 );
+               })}
+             </div>
+          )}
         </div>
 
       </div>
